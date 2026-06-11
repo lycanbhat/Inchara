@@ -1,65 +1,249 @@
-import Image from "next/image";
+'use client';
 
-export default function Home() {
+import { useState, useEffect } from 'react';
+import { Header } from '@/components/Header';
+import { Sidebar } from '@/components/Sidebar';
+import { KPISection } from '@/components/KPISection';
+import { BudgetVsActualChart } from '@/components/BudgetVsActualChart';
+import { SpendingDistributionChart } from '@/components/SpendingDistributionChart';
+import { TaskProgressSection } from '@/components/TaskProgressSection';
+import { ExpenseTimeline } from '@/components/ExpenseTimeline';
+import { SpendingTrendChart } from '@/components/SpendingTrendChart';
+import { PaymentMethodChart } from '@/components/PaymentMethodChart';
+import { DashboardStatBar } from '@/components/DashboardStatBar';
+import { AddExpenseModal } from '@/components/AddExpenseModal';
+import { AddTaskModal } from '@/components/AddTaskModal';
+import { AppData, Task, Expense } from '@/types';
+import { getAppData, saveAppData, deleteExpense, deleteTask } from '@/lib/storage';
+import { getQuickStats } from '@/lib/utils';
+import { Plus } from 'lucide-react';
+import { motion } from 'framer-motion';
+
+export default function Dashboard() {
+  const [data, setData] = useState<AppData | null>(null);
+  const [currentPage, setCurrentPage] = useState('dashboard');
+  const [showAddExpense, setShowAddExpense] = useState(false);
+  const [showAddTask, setShowAddTask] = useState(false);
+  const [editingExpense, setEditingExpense] = useState<Expense | null>(null);
+  const [editingTask, setEditingTask] = useState<Task | null>(null);
+
+  useEffect(() => {
+    const appData = getAppData();
+    setData(appData);
+  }, []);
+
+  if (!data) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <p className="text-gray-600">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  const stats = getQuickStats(data);
+
+  const handleDeleteExpense = (expenseId: string) => {
+    if (confirm('Are you sure you want to delete this expense?')) {
+      deleteExpense(expenseId);
+      const updated = getAppData();
+      setData(updated);
+    }
+  };
+
+  const handleDeleteTask = (taskId: string) => {
+    if (confirm('Are you sure you want to delete this task and all related expenses?')) {
+      deleteTask(taskId);
+      const updated = getAppData();
+      setData(updated);
+    }
+  };
+
+  const handleRefreshData = () => {
+    const updated = getAppData();
+    setData(updated);
+  };
+
+  const handleAddExpenseSuccess = () => {
+    handleRefreshData();
+  };
+
+  const handleAddTaskSuccess = () => {
+    handleRefreshData();
+  };
+
+  const handleExport = () => {
+    const dataStr = JSON.stringify(data, null, 2);
+    const dataBlob = new Blob([dataStr], { type: 'application/json' });
+    const url = URL.createObjectURL(dataBlob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `house-construction-data-${new Date().toISOString().split('T')[0]}.json`;
+    link.click();
+  };
+
+  const handleImport = () => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'application/json';
+    input.onchange = (e: any) => {
+      const file = e.target.files[0];
+      const reader = new FileReader();
+      reader.onload = (event: any) => {
+        try {
+          const imported = JSON.parse(event.target.result);
+          saveAppData(imported);
+          setData(imported);
+          alert('Data imported successfully!');
+        } catch (error) {
+          alert('Error importing data. Please check the file format.');
+        }
+      };
+      reader.readAsText(file);
+    };
+    input.click();
+  };
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
+    <div className="flex flex-col min-h-screen bg-gray-50">
+      <Header
+        projectName={data.project.name}
+        onExport={handleExport}
+        onImport={handleImport}
+      />
+
+      <div className="flex flex-1">
+        <Sidebar currentPage={currentPage} onNavigate={setCurrentPage} />
+
+        <main className="flex-1 overflow-auto">
+          <div className="mx-auto max-w-7xl px-6 py-8">
+            {currentPage === 'dashboard' && (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                className="space-y-8"
+              >
+                {/* KPI Cards */}
+                <KPISection
+                  totalBudget={stats.totalBudget}
+                  totalSpent={stats.totalSpent}
+                  remaining={stats.remaining}
+                  spentPercentage={stats.spentPercentage}
+                />
+
+                {/* Stat Bar */}
+                <DashboardStatBar
+                  todaySpending={stats.todaySpending}
+                  weekSpending={stats.thisWeekSpending}
+                  monthSpending={stats.thisMonthSpending}
+                  activeTasks={stats.activeTasks}
+                />
+
+                {/* Charts Section */}
+                <div className="grid gap-6 lg:grid-cols-2">
+                  <BudgetVsActualChart tasks={data.tasks} expenses={data.expenses} />
+                  <SpendingDistributionChart tasks={data.tasks} expenses={data.expenses} />
+                </div>
+
+                {/* Task Progress Section */}
+                <div>
+                  <div className="mb-4 flex items-center justify-between">
+                    <h2 className="text-2xl font-bold text-gray-900">Task Progress</h2>
+                    <button
+                      onClick={() => setShowAddTask(true)}
+                      className="flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-white transition-all hover:bg-blue-700"
+                    >
+                      <Plus className="h-4 w-4" />
+                      Add Task
+                    </button>
+                  </div>
+                  <TaskProgressSection
+                    tasks={data.tasks}
+                    expenses={data.expenses}
+                    onDelete={handleDeleteTask}
+                  />
+                </div>
+
+                {/* Expense Timeline Section */}
+                <div>
+                  <div className="mb-4 flex items-center justify-between">
+                    <h2 className="text-2xl font-bold text-gray-900">Recent Expenses</h2>
+                    <button
+                      onClick={() => setShowAddExpense(true)}
+                      className="flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-white transition-all hover:bg-blue-700"
+                    >
+                      <Plus className="h-4 w-4" />
+                      Add Expense
+                    </button>
+                  </div>
+                  <ExpenseTimeline
+                    expenses={data.expenses}
+                    tasks={data.tasks}
+                    onDelete={handleDeleteExpense}
+                  />
+                </div>
+
+                {/* Bottom Charts */}
+                <div className="grid gap-6 lg:grid-cols-2">
+                  <PaymentMethodChart expenses={data.expenses} />
+                  <SpendingTrendChart expenses={data.expenses} />
+                </div>
+              </motion.div>
+            )}
+
+            {currentPage === 'add-expense' && (
+              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+                <div className="rounded-lg border border-gray-200 bg-white p-8">
+                  <p className="text-center text-gray-600">Add Expense functionality coming soon...</p>
+                </div>
+              </motion.div>
+            )}
+
+            {currentPage === 'tasks' && (
+              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+                <div className="space-y-6">
+                  <div className="flex items-center justify-between">
+                    <h2 className="text-2xl font-bold text-gray-900">All Tasks</h2>
+                    <button className="flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-white transition-all hover:bg-blue-700">
+                      <Plus className="h-4 w-4" />
+                      New Task
+                    </button>
+                  </div>
+                  <TaskProgressSection
+                    tasks={data.tasks}
+                    expenses={data.expenses}
+                    onDelete={handleDeleteTask}
+                  />
+                </div>
+              </motion.div>
+            )}
+
+            {currentPage === 'reports' && (
+              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+                <div className="rounded-lg border border-gray-200 bg-white p-8">
+                  <p className="text-center text-gray-600">Reports and analytics coming soon...</p>
+                </div>
+              </motion.div>
+            )}
+          </div>
+        </main>
+      </div>
+
+      <AddExpenseModal
+        isOpen={showAddExpense}
+        onClose={() => setShowAddExpense(false)}
+        tasks={data.tasks}
+        onSuccess={handleAddExpenseSuccess}
+        expense={editingExpense || undefined}
+      />
+
+      <AddTaskModal
+        isOpen={showAddTask}
+        onClose={() => setShowAddTask(false)}
+        onSuccess={handleAddTaskSuccess}
+        task={editingTask || undefined}
+      />
     </div>
   );
 }
