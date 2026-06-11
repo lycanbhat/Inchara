@@ -95,6 +95,50 @@ export function getLastNDays(days: number): string[] {
   return result;
 }
 
+export function getSpendingByRange(
+  expenses: Expense[],
+  startDate: string
+): Array<{ date: string; amount: number }> {
+  const start = new Date(startDate + 'T00:00:00');
+  const now = new Date();
+  const dayDiff = Math.ceil((now.getTime() - start.getTime()) / 86400000);
+
+  // Aggregate by week when range exceeds 60 days to keep the chart readable
+  const useWeekly = dayDiff > 60;
+
+  const result: Array<{ date: string; amount: number }> = [];
+  const cursor = new Date(start);
+
+  while (cursor <= now) {
+    const periodStart = new Date(cursor);
+    const periodEnd = new Date(cursor);
+    if (useWeekly) {
+      periodEnd.setDate(periodEnd.getDate() + 6);
+    }
+    if (periodEnd > now) periodEnd.setTime(now.getTime());
+
+    const total = expenses
+      .filter(e => {
+        const d = new Date(e.date);
+        return d >= periodStart && d <= periodEnd;
+      })
+      .reduce((sum, e) => sum + e.amount, 0);
+
+    result.push({
+      date: periodStart.toLocaleDateString('en-IN', {
+        day: 'numeric',
+        month: 'short',
+        ...(useWeekly ? {} : {}),
+      }),
+      amount: total,
+    });
+
+    cursor.setDate(cursor.getDate() + (useWeekly ? 7 : 1));
+  }
+
+  return result;
+}
+
 export function getDailySpending(expenses: Expense[], days: number = 30): Array<{ date: string; amount: number }> {
   const dateRange = getLastNDays(days);
   const dailyMap = new Map<string, number>();

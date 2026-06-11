@@ -9,32 +9,45 @@ import {
   ResponsiveContainer,
 } from 'recharts';
 import { Expense } from '@/types';
-import { formatCurrency, getLastNDays } from '@/lib/utils';
+import { formatCurrency, getLastNDays, getSpendingByRange } from '@/lib/utils';
 
 const PERIODS = [
+  { label: 'Since Start', days: null },
   { label: 'Last 3 months', days: 90 },
   { label: 'Last 30 days', days: 30 },
-  { label: 'Last 7 days', days: 7 },
 ];
 
-export function SpendingAreaChart({ expenses }: { expenses: Expense[] }) {
-  const [activePeriod, setActivePeriod] = useState(1);
+interface Props {
+  expenses: Expense[];
+  projectStartDate: string;
+}
+
+export function SpendingAreaChart({ expenses, projectStartDate }: Props) {
+  const [activePeriod, setActivePeriod] = useState(0);
 
   const data = useMemo(() => {
-    const days = PERIODS[activePeriod].days;
-    const dateRange = getLastNDays(days);
+    const period = PERIODS[activePeriod];
+
+    if (period.days === null) {
+      // Since project start
+      return getSpendingByRange(expenses, projectStartDate);
+    }
+
+    // Last N days — daily
+    const dateRange = getLastNDays(period.days);
     return dateRange.map((date) => {
       const total = expenses
         .filter((e) => e.date.startsWith(date))
         .reduce((sum, e) => sum + e.amount, 0);
       const d = new Date(date);
-      const label =
-        days <= 7
-          ? d.toLocaleDateString('en-IN', { weekday: 'short', day: 'numeric' })
-          : d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
-      return { date: label, amount: total };
+      return {
+        date: d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }),
+        amount: total,
+      };
     });
-  }, [expenses, activePeriod]);
+  }, [expenses, activePeriod, projectStartDate]);
+
+  const totalForPeriod = data.reduce((s, d) => s + d.amount, 0);
 
   const CustomTooltip = ({ active, payload, label }: any) => {
     if (active && payload?.length) {
@@ -50,16 +63,16 @@ export function SpendingAreaChart({ expenses }: { expenses: Expense[] }) {
     return null;
   };
 
-  const totalForPeriod = data.reduce((sum, d) => sum + d.amount, 0);
-
   return (
     <div className="bg-white border border-gray-200 rounded-lg p-5">
       <div className="flex items-start justify-between mb-5">
         <div>
           <h3 className="text-sm font-semibold text-gray-900">Total Spending</h3>
           <p className="text-xs text-gray-400 mt-0.5">
-            {formatCurrency(totalForPeriod)} for the{' '}
-            {PERIODS[activePeriod].label.toLowerCase()}
+            {formatCurrency(totalForPeriod)} ·{' '}
+            {PERIODS[activePeriod].days === null
+              ? 'since project started'
+              : PERIODS[activePeriod].label.toLowerCase()}
           </p>
         </div>
         <div className="flex items-center gap-1 bg-gray-50 border border-gray-100 rounded-lg p-1">
@@ -67,7 +80,7 @@ export function SpendingAreaChart({ expenses }: { expenses: Expense[] }) {
             <button
               key={p.label}
               onClick={() => setActivePeriod(i)}
-              className={`text-xs px-3 py-1.5 rounded-md transition-all ${
+              className={`text-xs px-3 py-1.5 rounded-md transition-all whitespace-nowrap ${
                 i === activePeriod
                   ? 'bg-white text-gray-900 shadow-sm font-medium'
                   : 'text-gray-500 hover:text-gray-700'
@@ -94,7 +107,10 @@ export function SpendingAreaChart({ expenses }: { expenses: Expense[] }) {
             tick={{ fontSize: 11, fill: '#9CA3AF' }}
             interval="preserveStartEnd"
           />
-          <Tooltip content={<CustomTooltip />} cursor={{ stroke: '#E5E7EB', strokeWidth: 1 }} />
+          <Tooltip
+            content={<CustomTooltip />}
+            cursor={{ stroke: '#E5E7EB', strokeWidth: 1 }}
+          />
           <Area
             type="monotone"
             dataKey="amount"

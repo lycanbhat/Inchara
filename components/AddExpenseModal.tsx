@@ -11,6 +11,7 @@ interface AddExpenseModalProps {
   tasks: Task[];
   onSuccess: () => void;
   expense?: Expense;
+  minDate?: string;
 }
 
 const inputClass =
@@ -24,6 +25,7 @@ export function AddExpenseModal({
   tasks,
   onSuccess,
   expense,
+  minDate,
 }: AddExpenseModalProps) {
   const [formData, setFormData] = useState({
     taskId: expense?.taskId || tasks[0]?.id || '',
@@ -186,6 +188,8 @@ export function AddExpenseModal({
                 type="date"
                 value={formData.date}
                 onChange={(e) => setFormData({ ...formData, date: e.target.value })}
+                min={minDate}
+                max={new Date().toISOString().split('T')[0]}
                 className={inputClass}
               />
             </div>

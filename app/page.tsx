@@ -1,30 +1,20 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Sidebar } from '@/components/Sidebar';
+import { Navbar } from '@/components/Navbar';
 import { KPISection } from '@/components/KPISection';
 import { SpendingAreaChart } from '@/components/SpendingAreaChart';
 import { TasksExpenseTable } from '@/components/TasksExpenseTable';
 import { AddExpenseModal } from '@/components/AddExpenseModal';
 import { AddTaskModal } from '@/components/AddTaskModal';
-import { AppData, Task, Expense } from '@/types';
-import { getAppData, saveAppData, deleteExpense, deleteTask } from '@/lib/storage';
+import { AppData } from '@/types';
+import { getAppData, saveAppData, deleteExpense, deleteTask, updateProject } from '@/lib/storage';
 import { getQuickStats } from '@/lib/utils';
-import { Download, Upload, Plus } from 'lucide-react';
-
-const PAGE_TITLES: Record<string, string> = {
-  dashboard: 'Dashboard',
-  tasks: 'Tasks',
-  expenses: 'Expenses',
-  reports: 'Reports',
-  settings: 'Settings',
-};
 
 export default function Dashboard() {
   const [data, setData] = useState<AppData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [currentPage, setCurrentPage] = useState('dashboard');
   const [showAddExpense, setShowAddExpense] = useState(false);
   const [showAddTask, setShowAddTask] = useState(false);
 
@@ -32,7 +22,7 @@ export default function Dashboard() {
     try {
       const appData = await getAppData();
       setData(appData);
-    } catch (err) {
+    } catch {
       setError('Failed to load data');
     } finally {
       setLoading(false);
@@ -46,18 +36,24 @@ export default function Dashboard() {
     setData(updated);
   };
 
+  const handleStartDateChange = async (newDate: string) => {
+    if (!data) return;
+    await updateProject({ startDate: newDate });
+    setData((prev) =>
+      prev ? { ...prev, project: { ...prev.project, startDate: newDate } } : prev
+    );
+  };
+
   const handleDeleteExpense = async (id: string) => {
-    if (confirm('Delete this expense?')) {
-      await deleteExpense(id);
-      handleRefresh();
-    }
+    if (!confirm('Delete this expense?')) return;
+    await deleteExpense(id);
+    handleRefresh();
   };
 
   const handleDeleteTask = async (id: string) => {
-    if (confirm('Delete this task and all its expenses?')) {
-      await deleteTask(id);
-      handleRefresh();
-    }
+    if (!confirm('Delete this task and all its expenses?')) return;
+    await deleteTask(id);
+    handleRefresh();
   };
 
   const handleExport = () => {
@@ -110,63 +106,42 @@ export default function Dashboard() {
   }
 
   const stats = getQuickStats(data);
+  const projectStartDate = data.project.startDate;
 
   return (
-    <div className="flex h-screen overflow-hidden bg-gray-50">
-      <Sidebar currentPage={currentPage} onNavigate={setCurrentPage} />
+    <div className="flex flex-col h-screen overflow-hidden bg-gray-50">
+      <Navbar
+        projectName={data.project.name}
+        projectStartDate={projectStartDate}
+        onStartDateChange={handleStartDateChange}
+        onExport={handleExport}
+        onImport={handleImport}
+        onAddExpense={() => setShowAddExpense(true)}
+      />
 
-      <div className="flex flex-col flex-1 min-w-0 overflow-hidden bg-white">
-        {/* Top bar */}
-        <div className="flex items-center justify-between px-6 h-14 border-b border-gray-100 flex-shrink-0">
-          <h1 className="text-sm font-semibold text-gray-900">
-            {PAGE_TITLES[currentPage] ?? 'Dashboard'}
-          </h1>
-          <div className="flex items-center gap-2">
-            <button
-              onClick={handleImport}
-              className="flex items-center gap-1.5 text-xs text-gray-600 px-3 py-1.5 border border-gray-200 rounded-md hover:bg-gray-50 transition-colors"
-            >
-              <Upload className="w-3.5 h-3.5" />
-              Import
-            </button>
-            <button
-              onClick={handleExport}
-              className="flex items-center gap-1.5 text-xs text-gray-600 px-3 py-1.5 border border-gray-200 rounded-md hover:bg-gray-50 transition-colors"
-            >
-              <Download className="w-3.5 h-3.5" />
-              Export
-            </button>
-            <button
-              onClick={() => setShowAddExpense(true)}
-              className="flex items-center gap-1.5 text-xs bg-gray-900 text-white px-3 py-1.5 rounded-md hover:bg-gray-800 transition-colors"
-            >
-              <Plus className="w-3.5 h-3.5" />
-              Add Expense
-            </button>
-          </div>
-        </div>
-
-        {/* Scrollable content */}
-        <main className="flex-1 overflow-y-auto p-6 space-y-5">
-          <KPISection stats={stats} />
-          <SpendingAreaChart expenses={data.expenses} />
-          <TasksExpenseTable
-            tasks={data.tasks}
-            expenses={data.expenses}
-            onDeleteTask={handleDeleteTask}
-            onDeleteExpense={handleDeleteExpense}
-            onAddTask={() => setShowAddTask(true)}
-            onAddExpense={() => setShowAddExpense(true)}
-            onRefresh={handleRefresh}
-          />
-        </main>
-      </div>
+      <main className="flex-1 overflow-y-auto p-6 space-y-5">
+        <KPISection stats={stats} />
+        <SpendingAreaChart
+          expenses={data.expenses}
+          projectStartDate={projectStartDate}
+        />
+        <TasksExpenseTable
+          tasks={data.tasks}
+          expenses={data.expenses}
+          onDeleteTask={handleDeleteTask}
+          onDeleteExpense={handleDeleteExpense}
+          onAddTask={() => setShowAddTask(true)}
+          onAddExpense={() => setShowAddExpense(true)}
+          onRefresh={handleRefresh}
+        />
+      </main>
 
       <AddExpenseModal
         isOpen={showAddExpense}
         onClose={() => setShowAddExpense(false)}
         tasks={data.tasks}
         onSuccess={handleRefresh}
+        minDate={projectStartDate}
       />
       <AddTaskModal
         isOpen={showAddTask}

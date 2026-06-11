@@ -6,6 +6,17 @@
     "totalBudget": 1000000,
     "location": "Your Address"
   },
-  "tasks": [],
+  "tasks": [
+    {
+      "id": "task_1781199839308",
+      "name": "Floor and wall tile replacement",
+      "description": "removing of old tiles and installing new tiles",
+      "budgetedAmount": 40000,
+      "createdDate": "2026-06-11T17:43:59.308Z",
+      "status": "active",
+      "priority": "medium",
+      "color": "#3B82F6"
+    }
+  ],
   "expenses": []
 }
