@@ -8,7 +8,7 @@ import { TasksExpenseTable } from '@/components/TasksExpenseTable';
 import { AddExpenseModal } from '@/components/AddExpenseModal';
 import { AddTaskModal } from '@/components/AddTaskModal';
 import { ProjectSettingsModal } from '@/components/ProjectSettingsModal';
-import { AppData, Task } from '@/types';
+import { AppData, Task, Expense } from '@/types';
 import { getAppData, saveAppData, deleteExpense, deleteTask, updateProject } from '@/lib/storage';
 import { getQuickStats } from '@/lib/utils';
 
@@ -20,6 +20,7 @@ export default function Dashboard() {
   const [showAddTask, setShowAddTask] = useState(false);
   const [showProjectSettings, setShowProjectSettings] = useState(false);
   const [editingCategory, setEditingCategory] = useState<Task | null>(null);
+  const [editingExpense, setEditingExpense] = useState<Expense | null>(null);
 
   const loadData = async () => {
     try {
@@ -56,16 +57,12 @@ export default function Dashboard() {
     setShowAddTask(true);
   };
 
-  const handleExport = () => {
-    if (!data) return;
-    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `inchara-renovation-${new Date().toISOString().split('T')[0]}.json`;
-    a.click();
-    URL.revokeObjectURL(url);
+  const handleEditExpense = (expense: Expense) => {
+    setEditingExpense(expense);
+    setShowAddExpense(true);
   };
+
+
 
   if (loading) {
     return (
@@ -90,7 +87,6 @@ export default function Dashboard() {
     <div className="flex flex-col h-screen overflow-hidden bg-gray-50">
       <Navbar
         projectName={data.project.name}
-        onExport={handleExport}
         onAddExpense={() => setShowAddExpense(true)}
         onSettings={() => setShowProjectSettings(true)}
       />
@@ -110,15 +106,20 @@ export default function Dashboard() {
           onAddExpense={() => setShowAddExpense(true)}
           onRefresh={handleRefresh}
           onEditTask={handleEditCategory}
+          onEditExpense={handleEditExpense}
         />
       </main>
 
       <AddExpenseModal
         isOpen={showAddExpense}
-        onClose={() => setShowAddExpense(false)}
+        onClose={() => {
+          setShowAddExpense(false);
+          setEditingExpense(null);
+        }}
         tasks={data.tasks}
         onSuccess={handleRefresh}
         minDate={projectStartDate}
+        expense={editingExpense || undefined}
       />
       <AddTaskModal
         isOpen={showAddTask}

@@ -14,9 +14,10 @@ interface Props {
   onAddExpense: () => void;
   onRefresh: () => void;
   onEditTask?: (task: Task) => void;
+  onEditExpense?: (expense: Expense) => void;
 }
 
-const TABS = ['Categories', 'Expenses'] as const;
+const TABS = ['Expenses', 'Categories'] as const;
 
 function TaskStatusBadge({ task }: { task: Task }) {
   if (task.status === 'completed') {
@@ -202,10 +203,12 @@ function ExpensesTable({
   expenses,
   tasks,
   onDeleteExpense,
+  onEditExpense,
 }: {
   expenses: Expense[];
   tasks: Task[];
   onDeleteExpense: (id: string) => void;
+  onEditExpense?: (expense: Expense) => void;
 }) {
   const taskMap = new Map(tasks.map((t) => [t.id, t]));
   const sorted = [...expenses].sort(
@@ -272,7 +275,10 @@ function ExpensesTable({
                   {formatCurrency(expense.amount)}
                 </td>
                 <td className="px-4 py-3">
-                  <RowMenu onDelete={() => onDeleteExpense(expense.id)} />
+                  <RowMenu
+                    onEdit={onEditExpense ? () => onEditExpense(expense) : undefined}
+                    onDelete={() => onDeleteExpense(expense.id)}
+                  />
                 </td>
               </tr>
             );
@@ -304,6 +310,7 @@ export function TasksExpenseTable({
   onAddTask,
   onAddExpense,
   onEditTask,
+  onEditExpense,
 }: Props) {
   const [activeTab, setActiveTab] = useState<0 | 1>(0);
 
@@ -313,7 +320,7 @@ export function TasksExpenseTable({
       <div className="flex items-center justify-between px-4 border-b border-gray-100">
         <div className="flex items-center">
           {TABS.map((tab, i) => {
-            const count = i === 0 ? tasks.length : expenses.length;
+            const count = i === 0 ? expenses.length : tasks.length;
             return (
               <button
                 key={tab}
@@ -336,18 +343,23 @@ export function TasksExpenseTable({
         </div>
 
         <button
-          onClick={activeTab === 0 ? onAddTask : onAddExpense}
+          onClick={activeTab === 0 ? onAddExpense : onAddTask}
           className="flex items-center gap-1.5 text-xs bg-gray-900 text-white px-3 py-1.5 rounded-md hover:bg-gray-800 transition-colors my-3"
         >
           <Plus className="w-3 h-3" />
-          {activeTab === 0 ? 'Add Category' : 'Add Expense'}
+          {activeTab === 0 ? 'Add Expense' : 'Add Category'}
         </button>
       </div>
 
       {activeTab === 0 ? (
-        <TasksTable tasks={tasks} expenses={expenses} onDeleteTask={onDeleteTask} onEditTask={onEditTask} />
+        <ExpensesTable
+          expenses={expenses}
+          tasks={tasks}
+          onDeleteExpense={onDeleteExpense}
+          onEditExpense={onEditExpense}
+        />
       ) : (
-        <ExpensesTable expenses={expenses} tasks={tasks} onDeleteExpense={onDeleteExpense} />
+        <TasksTable tasks={tasks} expenses={expenses} onDeleteTask={onDeleteTask} onEditTask={onEditTask} />
       )}
     </div>
   );

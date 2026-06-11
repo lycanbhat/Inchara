@@ -253,6 +253,25 @@ export function getQuickStats(data: AppData) {
   const completedTasks = data.tasks.filter(t => t.status === 'completed').length;
   const activeTasks = data.tasks.filter(t => t.status === 'active').length;
 
+  const upiSpending = data.expenses
+    .filter(e => e.paymentMethod === 'upi')
+    .reduce((sum, e) => sum + e.amount, 0);
+
+  const cashSpending = data.expenses
+    .filter(e => e.paymentMethod === 'cash')
+    .reduce((sum, e) => sum + e.amount, 0);
+
+  let maxSpent = 0;
+  let mostExpensiveCategory = 'None';
+
+  data.tasks.forEach(task => {
+    const spent = getTaskSpent(task.id, data.expenses);
+    if (spent > maxSpent) {
+      maxSpent = spent;
+      mostExpensiveCategory = task.name;
+    }
+  });
+
   return {
     totalBudget,
     totalSpent,
@@ -264,6 +283,10 @@ export function getQuickStats(data: AppData) {
     completedTasks,
     activeTasks,
     totalExpenses: data.expenses.length,
-    averageDailySpending: Math.round(thisMonthSpending / 30)
+    averageDailySpending: Math.round(thisMonthSpending / 30),
+    upiSpending,
+    cashSpending,
+    mostExpensiveCategory,
+    mostExpensiveCategorySpent: maxSpent
   };
 }

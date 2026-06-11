@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
 import { Task, Expense } from '@/types';
 import { addExpense, updateExpense } from '@/lib/storage';
@@ -37,6 +37,20 @@ export function AddExpenseModal({
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+
+  useEffect(() => {
+    if (isOpen) {
+      setFormData({
+        taskId: expense?.taskId || tasks[0]?.id || '',
+        amount: expense?.amount ?? '',
+        paymentMethod: expense?.paymentMethod || 'cash',
+        description: expense?.description || '',
+        date: expense?.date?.split('T')[0] || new Date().toISOString().split('T')[0],
+        time: expense?.date?.split('T')[1]?.substring(0, 5) || '12:00',
+      });
+      setErrors({});
+    }
+  }, [expense, isOpen, tasks]);
 
   const validate = () => {
     const e: Record<string, string> = {};

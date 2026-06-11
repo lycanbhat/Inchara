@@ -138,5 +138,42 @@
       "color": "#06B6D4"
     }
   ],
-  "expenses": []
+  "expenses": [
+    {
+      "id": "exp_1781202787215",
+      "taskId": "task_1781201025798",
+      "amount": 500,
+      "paymentMethod": "cash",
+      "description": "Advance - Abbas",
+      "date": "2026-06-06T12:00:00",
+      "status": "completed"
+    },
+    {
+      "id": "exp_1781202811298",
+      "taskId": "task_1781201060531",
+      "amount": 1000,
+      "paymentMethod": "cash",
+      "description": "Advance - Bashir",
+      "date": "2026-06-06T12:00:00",
+      "status": "completed"
+    },
+    {
+      "id": "exp_1781202857382",
+      "taskId": "task_1781201043181",
+      "amount": 6200,
+      "paymentMethod": "upi",
+      "description": "Sand - One Tractor ",
+      "date": "2026-06-08T12:00:00",
+      "status": "completed"
+    },
+    {
+      "id": "exp_1781202882249",
+      "taskId": "task_1781201422192",
+      "amount": 50,
+      "paymentMethod": "cash",
+      "description": "Driver - Sand Tractor",
+      "date": "2026-06-08T12:00:00",
+      "status": "completed"
+    }
+  ]
 }
