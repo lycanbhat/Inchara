@@ -1,28 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { promises as fs } from 'fs';
-import path from 'path';
+import { readDataFile, writeDataFile } from '@/lib/db';
 import { AppData } from '@/types';
-
-const dataFilePath = path.join(process.cwd(), 'data', 'data.json');
-
-async function readDataFile(): Promise<AppData> {
-  try {
-    const content = await fs.readFile(dataFilePath, 'utf-8');
-    return JSON.parse(content);
-  } catch (error) {
-    console.error('Error reading data file:', error);
-    throw new Error('Failed to read data file');
-  }
-}
-
-async function writeDataFile(data: AppData): Promise<void> {
-  try {
-    await fs.writeFile(dataFilePath, JSON.stringify(data, null, 2), 'utf-8');
-  } catch (error) {
-    console.error('Error writing data file:', error);
-    throw new Error('Failed to write data file');
-  }
-}
 
 export async function PUT(
   request: NextRequest,
@@ -46,6 +24,7 @@ export async function PUT(
 
     return NextResponse.json({ success: true, task: data.tasks[index] });
   } catch (error) {
+    console.error(`PUT /api/tasks/${(await params).id} error:`, error);
     return NextResponse.json(
       { error: 'Failed to update task' },
       { status: 500 }
@@ -75,6 +54,7 @@ export async function DELETE(
 
     return NextResponse.json({ success: true, task: deletedTask });
   } catch (error) {
+    console.error(`DELETE /api/tasks/${(await params).id} error:`, error);
     return NextResponse.json(
       { error: 'Failed to delete task' },
       { status: 500 }
