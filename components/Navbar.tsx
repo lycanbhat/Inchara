@@ -1,6 +1,5 @@
 'use client';
 
-import { useRef } from 'react';
 import { Calendar, Download, Upload, Plus, Home } from 'lucide-react';
 
 interface NavbarProps {
@@ -20,8 +19,6 @@ export function Navbar({
   onImport,
   onAddExpense,
 }: NavbarProps) {
-  const dateInputRef = useRef<HTMLInputElement>(null);
-
   const formatted = projectStartDate
     ? new Date(projectStartDate + 'T00:00:00').toLocaleDateString('en-IN', {
         day: 'numeric',
@@ -29,10 +26,6 @@ export function Navbar({
         year: 'numeric',
       })
     : 'Set date';
-
-  const openPicker = () => {
-    dateInputRef.current?.showPicker?.();
-  };
 
   return (
     <header className="flex-shrink-0 flex items-center justify-between px-6 h-16 bg-white border-b border-gray-100">
@@ -44,34 +37,27 @@ export function Navbar({
         <span className="text-sm font-semibold text-gray-900">{projectName}</span>
       </div>
 
-      {/* Project start date — prominent center element */}
-      <div className="relative">
-        <button
-          type="button"
-          onClick={openPicker}
-          className="flex items-center gap-4 bg-gray-50 hover:bg-gray-100 border border-gray-200 hover:border-gray-300 rounded-xl px-6 py-2.5 transition-all group"
+      {/* Project start date — <label> wraps the input so clicking anywhere opens the picker natively */}
+      <label className="relative flex items-center gap-4 bg-gray-50 hover:bg-gray-100 border border-gray-200 hover:border-gray-300 rounded-xl px-6 py-2.5 transition-all group cursor-pointer">
+        <Calendar className="w-5 h-5 text-gray-400 group-hover:text-gray-600 transition-colors flex-shrink-0 pointer-events-none" />
+        <div className="text-left pointer-events-none">
+          <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-widest leading-none mb-1">
+            Project Start Date
+          </p>
+          <p className="text-base font-bold text-gray-900 leading-none">{formatted}</p>
+        </div>
+        <svg
+          className="w-4 h-4 text-gray-300 group-hover:text-gray-500 transition-colors ml-2 pointer-events-none"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+          strokeWidth={2}
         >
-          <Calendar className="w-5 h-5 text-gray-400 group-hover:text-gray-600 transition-colors flex-shrink-0" />
-          <div className="text-left">
-            <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-widest leading-none mb-1">
-              Project Start Date
-            </p>
-            <p className="text-base font-bold text-gray-900 leading-none">{formatted}</p>
-          </div>
-          <svg
-            className="w-4 h-4 text-gray-300 group-hover:text-gray-500 transition-colors ml-2"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-            strokeWidth={2}
-          >
-            <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-          </svg>
-        </button>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+        </svg>
 
-        {/* Hidden native date input — overlaid so the picker opens on click */}
+        {/* Input covers the whole label area — label click natively activates it in all browsers */}
         <input
-          ref={dateInputRef}
           type="date"
           value={projectStartDate}
           onChange={(e) => {
@@ -79,9 +65,8 @@ export function Navbar({
           }}
           max={new Date().toISOString().split('T')[0]}
           className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-          tabIndex={-1}
         />
-      </div>
+      </label>
 
       {/* Actions */}
       <div className="flex items-center gap-2">
