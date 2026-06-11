@@ -1,7 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-import { motion } from 'framer-motion';
 import { X } from 'lucide-react';
 import { Task, Expense } from '@/types';
 import { addExpense, updateExpense } from '@/lib/storage';
@@ -14,61 +13,67 @@ interface AddExpenseModalProps {
   expense?: Expense;
 }
 
+const inputClass =
+  'w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 placeholder-gray-400 outline-none focus:border-gray-400 focus:ring-0 transition-colors';
+
+const labelClass = 'block text-xs font-medium text-gray-500 mb-1.5';
+
 export function AddExpenseModal({
   isOpen,
   onClose,
   tasks,
   onSuccess,
-  expense
+  expense,
 }: AddExpenseModalProps) {
   const [formData, setFormData] = useState({
-    taskId: expense?.taskId || (tasks[0]?.id || ''),
-    amount: expense?.amount || 0,
+    taskId: expense?.taskId || tasks[0]?.id || '',
+    amount: expense?.amount ?? '',
     paymentMethod: expense?.paymentMethod || 'cash',
     description: expense?.description || '',
     date: expense?.date?.split('T')[0] || new Date().toISOString().split('T')[0],
-    time: expense?.date?.split('T')[1]?.substring(0, 5) || '12:00'
+    time: expense?.date?.split('T')[1]?.substring(0, 5) || '12:00',
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [errors, setErrors] = useState<Record<string, string>>({});
+
+  const validate = () => {
+    const e: Record<string, string> = {};
+    if (!formData.taskId) e.taskId = 'Select a task';
+    if (!formData.description.trim()) e.description = 'Required';
+    if (!formData.amount || Number(formData.amount) <= 0) e.amount = 'Enter a valid amount';
+    setErrors(e);
+    return Object.keys(e).length === 0;
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
-    if (!formData.taskId || !formData.amount || formData.amount <= 0) {
-      alert('Please fill in all required fields');
-      return;
-    }
-
+    if (!validate()) return;
     setIsSubmitting(true);
     try {
       const dateTime = `${formData.date}T${formData.time}:00`;
-
       if (expense) {
         await updateExpense(expense.id, {
           taskId: formData.taskId,
-          amount: formData.amount,
-          paymentMethod: formData.paymentMethod as any,
-          description: formData.description,
-          date: dateTime
-        });
-      } else {
-        const newExpense: Expense = {
-          id: `exp_${Date.now()}`,
-          taskId: formData.taskId,
-          amount: formData.amount,
+          amount: Number(formData.amount),
           paymentMethod: formData.paymentMethod as any,
           description: formData.description,
           date: dateTime,
-          status: 'completed'
-        };
-        await addExpense(newExpense);
+        });
+      } else {
+        await addExpense({
+          id: `exp_${Date.now()}`,
+          taskId: formData.taskId,
+          amount: Number(formData.amount),
+          paymentMethod: formData.paymentMethod as any,
+          description: formData.description,
+          date: dateTime,
+          status: 'completed',
+        });
       }
-
       onSuccess();
       onClose();
-    } catch (error) {
+    } catch {
       alert('Failed to save expense');
-      console.error(error);
     } finally {
       setIsSubmitting(false);
     }
@@ -77,125 +82,144 @@ export function AddExpenseModal({
   if (!isOpen) return null;
 
   return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
-    >
-      <motion.div
-        initial={{ scale: 0.95, opacity: 0 }}
-        animate={{ scale: 1, opacity: 1 }}
-        exit={{ scale: 0.95, opacity: 0 }}
-        className="relative w-full max-w-md rounded-lg bg-white shadow-xl"
-      >
-        <div className="flex items-center justify-between border-b border-gray-200 p-6">
-          <h2 className="text-xl font-bold text-gray-900">
-            {expense ? 'Edit Expense' : 'Add New Expense'}
-          </h2>
+    <div className="fixed inset-0 z-50 flex items-center justify-center">
+      {/* Backdrop */}
+      <div
+        className="absolute inset-0 bg-black/20 backdrop-blur-[2px]"
+        onClick={onClose}
+      />
+
+      {/* Panel */}
+      <div className="relative z-10 w-full max-w-sm mx-4 bg-white rounded-xl border border-gray-200 shadow-lg">
+        {/* Header */}
+        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
+          <div>
+            <h2 className="text-sm font-semibold text-gray-900">
+              {expense ? 'Edit Expense' : 'Add Expense'}
+            </h2>
+            <p className="text-xs text-gray-400 mt-0.5">
+              {expense ? 'Update the expense details' : 'Log a new construction expense'}
+            </p>
+          </div>
           <button
             onClick={onClose}
-            className="rounded-lg p-1 text-gray-600 hover:bg-gray-100"
+            className="p-1.5 rounded-md text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition-colors"
           >
-            <X className="h-5 w-5" />
+            <X className="w-4 h-4" />
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4 p-6">
+        {/* Form */}
+        <form onSubmit={handleSubmit} className="px-5 py-4 space-y-4">
+          {/* Task */}
           <div>
-            <label className="block text-sm font-medium text-gray-700">Task</label>
-            <select
-              value={formData.taskId}
-              onChange={(e) => setFormData({ ...formData, taskId: e.target.value })}
-              className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-gray-900 focus:border-blue-500 focus:outline-none"
-            >
-              {tasks.map(task => (
-                <option key={task.id} value={task.id}>
-                  {task.name}
-                </option>
-              ))}
-            </select>
+            <label className={labelClass}>Task</label>
+            {tasks.length === 0 ? (
+              <p className="text-xs text-orange-500 bg-orange-50 px-3 py-2 rounded-md border border-orange-100">
+                No tasks yet — create a task first
+              </p>
+            ) : (
+              <select
+                value={formData.taskId}
+                onChange={(e) => setFormData({ ...formData, taskId: e.target.value })}
+                className={inputClass}
+              >
+                {tasks.map((task) => (
+                  <option key={task.id} value={task.id}>
+                    {task.name}
+                  </option>
+                ))}
+              </select>
+            )}
+            {errors.taskId && <p className="text-xs text-red-500 mt-1">{errors.taskId}</p>}
           </div>
 
+          {/* Description */}
           <div>
-            <label className="block text-sm font-medium text-gray-700">Amount (₹)</label>
-            <input
-              type="number"
-              value={formData.amount}
-              onChange={(e) => setFormData({ ...formData, amount: parseFloat(e.target.value) })}
-              className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-gray-900 focus:border-blue-500 focus:outline-none"
-              placeholder="0"
-              required
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700">Payment Method</label>
-            <select
-              value={formData.paymentMethod}
-              onChange={(e) => setFormData({ ...formData, paymentMethod: e.target.value as any })}
-              className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-gray-900 focus:border-blue-500 focus:outline-none"
-            >
-              <option value="cash">Cash</option>
-              <option value="upi">UPI</option>
-              <option value="card">Card</option>
-              <option value="check">Check</option>
-            </select>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700">Description</label>
+            <label className={labelClass}>Description</label>
             <input
               type="text"
               value={formData.description}
               onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-              className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-gray-900 focus:border-blue-500 focus:outline-none"
-              placeholder="e.g., Cement purchase"
-              required
+              className={inputClass}
+              placeholder="e.g., Cement and steel purchase"
             />
+            {errors.description && (
+              <p className="text-xs text-red-500 mt-1">{errors.description}</p>
+            )}
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          {/* Amount + Payment row */}
+          <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-sm font-medium text-gray-700">Date</label>
+              <label className={labelClass}>Amount (₹)</label>
+              <input
+                type="number"
+                value={formData.amount}
+                onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
+                className={inputClass}
+                placeholder="0"
+                min="0"
+              />
+              {errors.amount && <p className="text-xs text-red-500 mt-1">{errors.amount}</p>}
+            </div>
+            <div>
+              <label className={labelClass}>Payment</label>
+              <select
+                value={formData.paymentMethod}
+                onChange={(e) => setFormData({ ...formData, paymentMethod: e.target.value as any })}
+                className={inputClass}
+              >
+                <option value="cash">Cash</option>
+                <option value="upi">UPI</option>
+                <option value="card">Card</option>
+                <option value="check">Check</option>
+              </select>
+            </div>
+          </div>
+
+          {/* Date + Time row */}
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className={labelClass}>Date</label>
               <input
                 type="date"
                 value={formData.date}
                 onChange={(e) => setFormData({ ...formData, date: e.target.value })}
-                className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-gray-900 focus:border-blue-500 focus:outline-none"
-                required
+                className={inputClass}
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700">Time</label>
+              <label className={labelClass}>Time</label>
               <input
                 type="time"
                 value={formData.time}
                 onChange={(e) => setFormData({ ...formData, time: e.target.value })}
-                className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-gray-900 focus:border-blue-500 focus:outline-none"
+                className={inputClass}
               />
             </div>
           </div>
 
-          <div className="flex gap-3 pt-4">
+          {/* Actions */}
+          <div className="flex gap-2 pt-1">
             <button
               type="button"
               onClick={onClose}
               disabled={isSubmitting}
-              className="flex-1 rounded-lg border border-gray-300 px-4 py-2 font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+              className="flex-1 text-sm px-4 py-2 rounded-md border border-gray-200 text-gray-600 hover:bg-gray-50 transition-colors disabled:opacity-50"
             >
               Cancel
             </button>
             <button
               type="submit"
-              disabled={isSubmitting}
-              className="flex-1 rounded-lg bg-blue-600 px-4 py-2 font-medium text-white hover:bg-blue-700 disabled:opacity-50"
+              disabled={isSubmitting || tasks.length === 0}
+              className="flex-1 text-sm px-4 py-2 rounded-md bg-gray-900 text-white hover:bg-gray-800 transition-colors disabled:opacity-50"
             >
-              {isSubmitting ? 'Saving...' : expense ? 'Update' : 'Add'} Expense
+              {isSubmitting ? 'Saving…' : expense ? 'Update' : 'Add Expense'}
             </button>
           </div>
         </form>
-      </motion.div>
-    </motion.div>
+      </div>
+    </div>
   );
 }

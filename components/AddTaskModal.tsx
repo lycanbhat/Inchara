@@ -1,7 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-import { motion } from 'framer-motion';
 import { X } from 'lucide-react';
 import { Task } from '@/types';
 import { addTask, updateTask } from '@/lib/storage';
@@ -13,60 +12,71 @@ interface AddTaskModalProps {
   task?: Task;
 }
 
-const COLORS = ['#3B82F6', '#8B5CF6', '#EC4899', '#F59E0B', '#06B6D4', '#10B981', '#EF4444', '#6366F1'];
+const COLORS = [
+  '#3B82F6',
+  '#8B5CF6',
+  '#EC4899',
+  '#F59E0B',
+  '#06B6D4',
+  '#10B981',
+  '#EF4444',
+  '#6366F1',
+];
 
-export function AddTaskModal({
-  isOpen,
-  onClose,
-  onSuccess,
-  task
-}: AddTaskModalProps) {
+const inputClass =
+  'w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 placeholder-gray-400 outline-none focus:border-gray-400 transition-colors';
+
+const labelClass = 'block text-xs font-medium text-gray-500 mb-1.5';
+
+export function AddTaskModal({ isOpen, onClose, onSuccess, task }: AddTaskModalProps) {
   const [formData, setFormData] = useState({
     name: task?.name || '',
     description: task?.description || '',
-    budgetedAmount: task?.budgetedAmount || 0,
+    budgetedAmount: task?.budgetedAmount ?? '',
     priority: task?.priority || 'medium',
-    color: task?.color || COLORS[0]
+    color: task?.color || COLORS[0],
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [errors, setErrors] = useState<Record<string, string>>({});
+
+  const validate = () => {
+    const e: Record<string, string> = {};
+    if (!formData.name.trim()) e.name = 'Required';
+    if (!formData.budgetedAmount || Number(formData.budgetedAmount) <= 0)
+      e.budgetedAmount = 'Enter a valid amount';
+    setErrors(e);
+    return Object.keys(e).length === 0;
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
-    if (!formData.name || !formData.budgetedAmount || formData.budgetedAmount <= 0) {
-      alert('Please fill in all required fields');
-      return;
-    }
-
+    if (!validate()) return;
     setIsSubmitting(true);
     try {
       if (task) {
         await updateTask(task.id, {
           name: formData.name,
           description: formData.description,
-          budgetedAmount: formData.budgetedAmount,
+          budgetedAmount: Number(formData.budgetedAmount),
           priority: formData.priority as any,
-          color: formData.color
+          color: formData.color,
         });
       } else {
-        const newTask: Task = {
+        await addTask({
           id: `task_${Date.now()}`,
           name: formData.name,
           description: formData.description,
-          budgetedAmount: formData.budgetedAmount,
+          budgetedAmount: Number(formData.budgetedAmount),
           createdDate: new Date().toISOString(),
           status: 'active',
           priority: formData.priority as any,
-          color: formData.color
-        };
-        await addTask(newTask);
+          color: formData.color,
+        });
       }
-
       onSuccess();
       onClose();
-    } catch (error) {
+    } catch {
       alert('Failed to save task');
-      console.error(error);
     } finally {
       setIsSubmitting(false);
     }
@@ -75,116 +85,135 @@ export function AddTaskModal({
   if (!isOpen) return null;
 
   return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
-    >
-      <motion.div
-        initial={{ scale: 0.95, opacity: 0 }}
-        animate={{ scale: 1, opacity: 1 }}
-        exit={{ scale: 0.95, opacity: 0 }}
-        className="relative w-full max-w-md rounded-lg bg-white shadow-xl"
-      >
-        <div className="flex items-center justify-between border-b border-gray-200 p-6">
-          <h2 className="text-xl font-bold text-gray-900">
-            {task ? 'Edit Task' : 'Add New Task'}
-          </h2>
+    <div className="fixed inset-0 z-50 flex items-center justify-center">
+      {/* Backdrop */}
+      <div
+        className="absolute inset-0 bg-black/20 backdrop-blur-[2px]"
+        onClick={onClose}
+      />
+
+      {/* Panel */}
+      <div className="relative z-10 w-full max-w-sm mx-4 bg-white rounded-xl border border-gray-200 shadow-lg">
+        {/* Header */}
+        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
+          <div>
+            <h2 className="text-sm font-semibold text-gray-900">
+              {task ? 'Edit Task' : 'Add Task'}
+            </h2>
+            <p className="text-xs text-gray-400 mt-0.5">
+              {task ? 'Update the task details' : 'Create a new construction task'}
+            </p>
+          </div>
           <button
             onClick={onClose}
-            className="rounded-lg p-1 text-gray-600 hover:bg-gray-100"
+            className="p-1.5 rounded-md text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition-colors"
           >
-            <X className="h-5 w-5" />
+            <X className="w-4 h-4" />
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4 p-6">
+        {/* Form */}
+        <form onSubmit={handleSubmit} className="px-5 py-4 space-y-4">
+          {/* Name */}
           <div>
-            <label className="block text-sm font-medium text-gray-700">Task Name</label>
+            <label className={labelClass}>Task Name</label>
             <input
               type="text"
               value={formData.name}
               onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-              className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-gray-900 focus:border-blue-500 focus:outline-none"
+              className={inputClass}
               placeholder="e.g., Foundation"
-              required
+              autoFocus
             />
+            {errors.name && <p className="text-xs text-red-500 mt-1">{errors.name}</p>}
           </div>
 
+          {/* Description */}
           <div>
-            <label className="block text-sm font-medium text-gray-700">Description</label>
+            <label className={labelClass}>Description <span className="text-gray-300">(optional)</span></label>
             <input
               type="text"
               value={formData.description}
               onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-              className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-gray-900 focus:border-blue-500 focus:outline-none"
-              placeholder="Brief description of the task"
-              required
+              className={inputClass}
+              placeholder="Brief description"
             />
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700">Budgeted Amount (₹)</label>
-            <input
-              type="number"
-              value={formData.budgetedAmount}
-              onChange={(e) => setFormData({ ...formData, budgetedAmount: parseFloat(e.target.value) })}
-              className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-gray-900 focus:border-blue-500 focus:outline-none"
-              placeholder="0"
-              required
-            />
+          {/* Budget + Priority row */}
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className={labelClass}>Budget (₹)</label>
+              <input
+                type="number"
+                value={formData.budgetedAmount}
+                onChange={(e) => setFormData({ ...formData, budgetedAmount: e.target.value })}
+                className={inputClass}
+                placeholder="0"
+                min="0"
+              />
+              {errors.budgetedAmount && (
+                <p className="text-xs text-red-500 mt-1">{errors.budgetedAmount}</p>
+              )}
+            </div>
+            <div>
+              <label className={labelClass}>Priority</label>
+              <select
+                value={formData.priority}
+                onChange={(e) => setFormData({ ...formData, priority: e.target.value as any })}
+                className={inputClass}
+              >
+                <option value="low">Low</option>
+                <option value="medium">Medium</option>
+                <option value="high">High</option>
+              </select>
+            </div>
           </div>
 
+          {/* Color */}
           <div>
-            <label className="block text-sm font-medium text-gray-700">Priority</label>
-            <select
-              value={formData.priority}
-              onChange={(e) => setFormData({ ...formData, priority: e.target.value as any })}
-              className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-gray-900 focus:border-blue-500 focus:outline-none"
-            >
-              <option value="low">Low</option>
-              <option value="medium">Medium</option>
-              <option value="high">High</option>
-            </select>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700">Color</label>
-            <div className="mt-2 grid grid-cols-4 gap-2">
-              {COLORS.map(color => (
+            <label className={labelClass}>Color</label>
+            <div className="flex items-center gap-2 flex-wrap">
+              {COLORS.map((color) => (
                 <button
                   key={color}
                   type="button"
                   onClick={() => setFormData({ ...formData, color })}
-                  className={`h-8 rounded-lg border-2 ${
-                    formData.color === color ? 'border-gray-900' : 'border-gray-300'
-                  }`}
+                  className="w-7 h-7 rounded-full transition-transform hover:scale-110 focus:outline-none"
                   style={{ backgroundColor: color }}
-                />
+                >
+                  {formData.color === color && (
+                    <span className="flex items-center justify-center w-full h-full">
+                      <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                      </svg>
+                    </span>
+                  )}
+                </button>
               ))}
             </div>
           </div>
 
-          <div className="flex gap-3 pt-4">
+          {/* Actions */}
+          <div className="flex gap-2 pt-1">
             <button
               type="button"
               onClick={onClose}
               disabled={isSubmitting}
-              className="flex-1 rounded-lg border border-gray-300 px-4 py-2 font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+              className="flex-1 text-sm px-4 py-2 rounded-md border border-gray-200 text-gray-600 hover:bg-gray-50 transition-colors disabled:opacity-50"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={isSubmitting}
-              className="flex-1 rounded-lg bg-blue-600 px-4 py-2 font-medium text-white hover:bg-blue-700 disabled:opacity-50"
+              className="flex-1 text-sm px-4 py-2 rounded-md bg-gray-900 text-white hover:bg-gray-800 transition-colors disabled:opacity-50"
             >
-              {isSubmitting ? 'Saving...' : task ? 'Update' : 'Create'} Task
+              {isSubmitting ? 'Saving…' : task ? 'Update Task' : 'Add Task'}
             </button>
           </div>
         </form>
-      </motion.div>
-    </motion.div>
+      </div>
+    </div>
   );
 }
