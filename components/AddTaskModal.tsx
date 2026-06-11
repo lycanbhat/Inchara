@@ -28,8 +28,9 @@ export function AddTaskModal({
     priority: task?.priority || 'medium',
     color: task?.color || COLORS[0]
   });
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!formData.name || !formData.budgetedAmount || formData.budgetedAmount <= 0) {
@@ -37,30 +38,38 @@ export function AddTaskModal({
       return;
     }
 
-    if (task) {
-      updateTask(task.id, {
-        name: formData.name,
-        description: formData.description,
-        budgetedAmount: formData.budgetedAmount,
-        priority: formData.priority as any,
-        color: formData.color
-      });
-    } else {
-      const newTask: Task = {
-        id: `task_${Date.now()}`,
-        name: formData.name,
-        description: formData.description,
-        budgetedAmount: formData.budgetedAmount,
-        createdDate: new Date().toISOString(),
-        status: 'active',
-        priority: formData.priority as any,
-        color: formData.color
-      };
-      addTask(newTask);
-    }
+    setIsSubmitting(true);
+    try {
+      if (task) {
+        await updateTask(task.id, {
+          name: formData.name,
+          description: formData.description,
+          budgetedAmount: formData.budgetedAmount,
+          priority: formData.priority as any,
+          color: formData.color
+        });
+      } else {
+        const newTask: Task = {
+          id: `task_${Date.now()}`,
+          name: formData.name,
+          description: formData.description,
+          budgetedAmount: formData.budgetedAmount,
+          createdDate: new Date().toISOString(),
+          status: 'active',
+          priority: formData.priority as any,
+          color: formData.color
+        };
+        await addTask(newTask);
+      }
 
-    onSuccess();
-    onClose();
+      onSuccess();
+      onClose();
+    } catch (error) {
+      alert('Failed to save task');
+      console.error(error);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   if (!isOpen) return null;
@@ -161,15 +170,17 @@ export function AddTaskModal({
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 rounded-lg border border-gray-300 px-4 py-2 font-medium text-gray-700 hover:bg-gray-50"
+              disabled={isSubmitting}
+              className="flex-1 rounded-lg border border-gray-300 px-4 py-2 font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
             >
               Cancel
             </button>
             <button
               type="submit"
-              className="flex-1 rounded-lg bg-blue-600 px-4 py-2 font-medium text-white hover:bg-blue-700"
+              disabled={isSubmitting}
+              className="flex-1 rounded-lg bg-blue-600 px-4 py-2 font-medium text-white hover:bg-blue-700 disabled:opacity-50"
             >
-              {task ? 'Update' : 'Create'} Task
+              {isSubmitting ? 'Saving...' : task ? 'Update' : 'Create'} Task
             </button>
           </div>
         </form>

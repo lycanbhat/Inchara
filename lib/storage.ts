@@ -1,268 +1,133 @@
 import { AppData, Project, Task, Expense } from '@/types';
 
-const STORAGE_KEY = 'house_construction_data';
+const API_BASE_URL = '/api';
 
-const defaultData: AppData = {
-  project: {
-    name: 'House Construction',
-    startDate: '2024-01-15',
-    endDate: '2025-01-15',
-    totalBudget: 1000000,
-    location: 'Your Address'
-  },
-  tasks: [
-    {
-      id: 'task_001',
-      name: 'Foundation',
-      description: 'Foundation work and leveling',
-      budgetedAmount: 50000,
-      createdDate: '2024-01-15',
-      status: 'active',
-      priority: 'high',
-      color: '#3B82F6'
-    },
-    {
-      id: 'task_002',
-      name: 'Walls & Structure',
-      description: 'Wall construction and structural work',
-      budgetedAmount: 150000,
-      createdDate: '2024-02-01',
-      status: 'active',
-      priority: 'high',
-      color: '#8B5CF6'
-    },
-    {
-      id: 'task_003',
-      name: 'Flooring',
-      description: 'Flooring installation',
-      budgetedAmount: 100000,
-      createdDate: '2024-03-01',
-      status: 'active',
-      priority: 'medium',
-      color: '#EC4899'
-    },
-    {
-      id: 'task_004',
-      name: 'Electrical Work',
-      description: 'Electrical wiring and installation',
-      budgetedAmount: 80000,
-      createdDate: '2024-04-01',
-      status: 'active',
-      priority: 'high',
-      color: '#F59E0B'
-    },
-    {
-      id: 'task_005',
-      name: 'Plumbing',
-      description: 'Plumbing and water systems',
-      budgetedAmount: 70000,
-      createdDate: '2024-04-15',
-      status: 'active',
-      priority: 'medium',
-      color: '#06B6D4'
-    },
-    {
-      id: 'task_006',
-      name: 'Painting',
-      description: 'Interior and exterior painting',
-      budgetedAmount: 60000,
-      createdDate: '2024-05-01',
-      status: 'active',
-      priority: 'low',
-      color: '#10B981'
-    },
-    {
-      id: 'task_007',
-      name: 'Doors & Windows',
-      description: 'Door and window installation',
-      budgetedAmount: 120000,
-      createdDate: '2024-05-15',
-      status: 'active',
-      priority: 'medium',
-      color: '#EF4444'
-    },
-    {
-      id: 'task_008',
-      name: 'Finishing',
-      description: 'Final finishing and accessories',
-      budgetedAmount: 90000,
-      createdDate: '2024-06-01',
-      status: 'active',
-      priority: 'low',
-      color: '#6366F1'
-    }
-  ],
-  expenses: [
-    {
-      id: 'exp_001',
-      taskId: 'task_001',
-      amount: 15000,
-      paymentMethod: 'cash',
-      date: '2024-01-20T10:30:00',
-      description: 'Cement and steel purchase',
-      receipt: 'Receipt_001',
-      status: 'completed'
-    },
-    {
-      id: 'exp_002',
-      taskId: 'task_001',
-      amount: 12000,
-      paymentMethod: 'upi',
-      date: '2024-01-25T14:00:00',
-      description: 'Labor cost - Day 1',
-      status: 'completed'
-    },
-    {
-      id: 'exp_003',
-      taskId: 'task_001',
-      amount: 8000,
-      paymentMethod: 'cash',
-      date: '2024-02-05T09:15:00',
-      description: 'Additional materials',
-      status: 'completed'
-    },
-    {
-      id: 'exp_004',
-      taskId: 'task_002',
-      amount: 35000,
-      paymentMethod: 'upi',
-      date: '2024-02-10T11:00:00',
-      description: 'Brick and concrete supply',
-      receipt: 'Receipt_002',
-      status: 'completed'
-    },
-    {
-      id: 'exp_005',
-      taskId: 'task_002',
-      amount: 28000,
-      paymentMethod: 'cash',
-      date: '2024-02-20T15:30:00',
-      description: 'Labor cost - Week 2',
-      status: 'completed'
-    },
-    {
-      id: 'exp_006',
-      taskId: 'task_003',
-      amount: 22000,
-      paymentMethod: 'upi',
-      date: '2024-03-05T10:00:00',
-      description: 'Flooring materials',
-      status: 'completed'
-    },
-    {
-      id: 'exp_007',
-      taskId: 'task_004',
-      amount: 18000,
-      paymentMethod: 'cash',
-      date: '2024-04-01T12:00:00',
-      description: 'Electrical wires and conduits',
-      receipt: 'Receipt_003',
-      status: 'completed'
-    },
-    {
-      id: 'exp_008',
-      taskId: 'task_005',
-      amount: 15000,
-      paymentMethod: 'upi',
-      date: '2024-04-20T09:30:00',
-      description: 'Pipe and fitting materials',
-      status: 'completed'
-    },
-    {
-      id: 'exp_009',
-      taskId: 'task_006',
-      amount: 12000,
-      paymentMethod: 'cash',
-      date: '2024-05-10T14:00:00',
-      description: 'Paint and primer supplies',
-      status: 'completed'
-    },
-    {
-      id: 'exp_010',
-      taskId: 'task_007',
-      amount: 32000,
-      paymentMethod: 'upi',
-      date: '2024-05-25T11:00:00',
-      description: 'Door and window frames',
-      receipt: 'Receipt_004',
-      status: 'completed'
-    }
-  ]
-};
-
-export function getAppData(): AppData {
-  if (typeof window === 'undefined') {
-    return defaultData;
-  }
-
+async function fetchWithErrorHandling(url: string, options?: RequestInit) {
   try {
-    const data = localStorage.getItem(STORAGE_KEY);
-    return data ? JSON.parse(data) : defaultData;
+    const response = await fetch(url, options);
+    if (!response.ok) {
+      throw new Error(`API error: ${response.status}`);
+    }
+    return await response.json();
   } catch (error) {
-    console.error('Error reading from localStorage:', error);
-    return defaultData;
+    console.error('API Error:', error);
+    throw error;
   }
 }
 
-export function saveAppData(data: AppData): void {
-  if (typeof window === 'undefined') return;
-
+export async function getAppData(): Promise<AppData> {
   try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+    return await fetchWithErrorHandling(`${API_BASE_URL}/data`);
   } catch (error) {
-    console.error('Error saving to localStorage:', error);
+    console.error('Error fetching data:', error);
+    throw new Error('Failed to fetch data');
   }
 }
 
-export function addExpense(expense: Expense): void {
-  const data = getAppData();
-  data.expenses.push(expense);
-  saveAppData(data);
-}
-
-export function updateExpense(id: string, expense: Partial<Expense>): void {
-  const data = getAppData();
-  const index = data.expenses.findIndex(e => e.id === id);
-  if (index !== -1) {
-    data.expenses[index] = { ...data.expenses[index], ...expense };
-    saveAppData(data);
+export async function saveAppData(data: AppData): Promise<void> {
+  try {
+    await fetchWithErrorHandling(`${API_BASE_URL}/data`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data)
+    });
+  } catch (error) {
+    console.error('Error saving data:', error);
+    throw new Error('Failed to save data');
   }
 }
 
-export function deleteExpense(id: string): void {
-  const data = getAppData();
-  data.expenses = data.expenses.filter(e => e.id !== id);
-  saveAppData(data);
-}
-
-export function addTask(task: Task): void {
-  const data = getAppData();
-  data.tasks.push(task);
-  saveAppData(data);
-}
-
-export function updateTask(id: string, task: Partial<Task>): void {
-  const data = getAppData();
-  const index = data.tasks.findIndex(t => t.id === id);
-  if (index !== -1) {
-    data.tasks[index] = { ...data.tasks[index], ...task };
-    saveAppData(data);
+export async function addExpense(expense: Expense): Promise<Expense> {
+  try {
+    const response = await fetchWithErrorHandling(`${API_BASE_URL}/expenses`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(expense)
+    });
+    return response.expense;
+  } catch (error) {
+    console.error('Error adding expense:', error);
+    throw new Error('Failed to add expense');
   }
 }
 
-export function deleteTask(id: string): void {
-  const data = getAppData();
-  data.tasks = data.tasks.filter(t => t.id !== id);
-  data.expenses = data.expenses.filter(e => e.taskId !== id);
-  saveAppData(data);
+export async function updateExpense(id: string, expense: Partial<Expense>): Promise<Expense> {
+  try {
+    const response = await fetchWithErrorHandling(`${API_BASE_URL}/expenses/${id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(expense)
+    });
+    return response.expense;
+  } catch (error) {
+    console.error('Error updating expense:', error);
+    throw new Error('Failed to update expense');
+  }
 }
 
-export function updateProject(project: Partial<Project>): void {
-  const data = getAppData();
-  data.project = { ...data.project, ...project };
-  saveAppData(data);
+export async function deleteExpense(id: string): Promise<void> {
+  try {
+    await fetchWithErrorHandling(`${API_BASE_URL}/expenses/${id}`, {
+      method: 'DELETE'
+    });
+  } catch (error) {
+    console.error('Error deleting expense:', error);
+    throw new Error('Failed to delete expense');
+  }
 }
 
-export function resetToDefault(): void {
-  saveAppData(defaultData);
+export async function addTask(task: Task): Promise<Task> {
+  try {
+    const response = await fetchWithErrorHandling(`${API_BASE_URL}/tasks`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(task)
+    });
+    return response.task;
+  } catch (error) {
+    console.error('Error adding task:', error);
+    throw new Error('Failed to add task');
+  }
+}
+
+export async function updateTask(id: string, task: Partial<Task>): Promise<Task> {
+  try {
+    const response = await fetchWithErrorHandling(`${API_BASE_URL}/tasks/${id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(task)
+    });
+    return response.task;
+  } catch (error) {
+    console.error('Error updating task:', error);
+    throw new Error('Failed to update task');
+  }
+}
+
+export async function deleteTask(id: string): Promise<void> {
+  try {
+    await fetchWithErrorHandling(`${API_BASE_URL}/tasks/${id}`, {
+      method: 'DELETE'
+    });
+  } catch (error) {
+    console.error('Error deleting task:', error);
+    throw new Error('Failed to delete task');
+  }
+}
+
+export async function updateProject(project: Partial<Project>): Promise<void> {
+  try {
+    const data = await getAppData();
+    data.project = { ...data.project, ...project };
+    await saveAppData(data);
+  } catch (error) {
+    console.error('Error updating project:', error);
+    throw new Error('Failed to update project');
+  }
+}
+
+export async function resetToDefault(): Promise<void> {
+  // This would reset to the default data from data.json
+  // In a real scenario, you might want to reload from a backup
+  console.log('Reset to default not implemented');
 }

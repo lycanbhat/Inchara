@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { X } from 'lucide-react';
 import { Task, Expense } from '@/types';
-import { addExpense, updateExpense, getAppData } from '@/lib/storage';
+import { addExpense, updateExpense } from '@/lib/storage';
 
 interface AddExpenseModalProps {
   isOpen: boolean;
@@ -29,8 +29,9 @@ export function AddExpenseModal({
     date: expense?.date?.split('T')[0] || new Date().toISOString().split('T')[0],
     time: expense?.date?.split('T')[1]?.substring(0, 5) || '12:00'
   });
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!formData.taskId || !formData.amount || formData.amount <= 0) {
@@ -38,31 +39,39 @@ export function AddExpenseModal({
       return;
     }
 
-    const dateTime = `${formData.date}T${formData.time}:00`;
+    setIsSubmitting(true);
+    try {
+      const dateTime = `${formData.date}T${formData.time}:00`;
 
-    if (expense) {
-      updateExpense(expense.id, {
-        taskId: formData.taskId,
-        amount: formData.amount,
-        paymentMethod: formData.paymentMethod as any,
-        description: formData.description,
-        date: dateTime
-      });
-    } else {
-      const newExpense: Expense = {
-        id: `exp_${Date.now()}`,
-        taskId: formData.taskId,
-        amount: formData.amount,
-        paymentMethod: formData.paymentMethod as any,
-        description: formData.description,
-        date: dateTime,
-        status: 'completed'
-      };
-      addExpense(newExpense);
+      if (expense) {
+        await updateExpense(expense.id, {
+          taskId: formData.taskId,
+          amount: formData.amount,
+          paymentMethod: formData.paymentMethod as any,
+          description: formData.description,
+          date: dateTime
+        });
+      } else {
+        const newExpense: Expense = {
+          id: `exp_${Date.now()}`,
+          taskId: formData.taskId,
+          amount: formData.amount,
+          paymentMethod: formData.paymentMethod as any,
+          description: formData.description,
+          date: dateTime,
+          status: 'completed'
+        };
+        await addExpense(newExpense);
+      }
+
+      onSuccess();
+      onClose();
+    } catch (error) {
+      alert('Failed to save expense');
+      console.error(error);
+    } finally {
+      setIsSubmitting(false);
     }
-
-    onSuccess();
-    onClose();
   };
 
   if (!isOpen) return null;
@@ -172,15 +181,17 @@ export function AddExpenseModal({
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 rounded-lg border border-gray-300 px-4 py-2 font-medium text-gray-700 hover:bg-gray-50"
+              disabled={isSubmitting}
+              className="flex-1 rounded-lg border border-gray-300 px-4 py-2 font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
             >
               Cancel
             </button>
             <button
               type="submit"
-              className="flex-1 rounded-lg bg-blue-600 px-4 py-2 font-medium text-white hover:bg-blue-700"
+              disabled={isSubmitting}
+              className="flex-1 rounded-lg bg-blue-600 px-4 py-2 font-medium text-white hover:bg-blue-700 disabled:opacity-50"
             >
-              {expense ? 'Update' : 'Add'} Expense
+              {isSubmitting ? 'Saving...' : expense ? 'Update' : 'Add'} Expense
             </button>
           </div>
         </form>

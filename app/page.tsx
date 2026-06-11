@@ -21,6 +21,8 @@ import { motion } from 'framer-motion';
 
 export default function Dashboard() {
   const [data, setData] = useState<AppData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState('dashboard');
   const [showAddExpense, setShowAddExpense] = useState(false);
   const [showAddTask, setShowAddTask] = useState(false);
@@ -28,11 +30,23 @@ export default function Dashboard() {
   const [editingTask, setEditingTask] = useState<Task | null>(null);
 
   useEffect(() => {
-    const appData = getAppData();
-    setData(appData);
+    const loadData = async () => {
+      try {
+        setLoading(true);
+        const appData = await getAppData();
+        setData(appData);
+      } catch (err) {
+        setError('Failed to load data');
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadData();
   }, []);
 
-  if (!data) {
+  if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
@@ -42,27 +56,52 @@ export default function Dashboard() {
     );
   }
 
+  if (error || !data) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <p className="text-red-600">{error || 'Failed to load data'}</p>
+        </div>
+      </div>
+    );
+  }
+
   const stats = getQuickStats(data);
 
-  const handleDeleteExpense = (expenseId: string) => {
+  const handleDeleteExpense = async (expenseId: string) => {
     if (confirm('Are you sure you want to delete this expense?')) {
-      deleteExpense(expenseId);
-      const updated = getAppData();
-      setData(updated);
+      try {
+        await deleteExpense(expenseId);
+        const updated = await getAppData();
+        setData(updated);
+      } catch (err) {
+        alert('Failed to delete expense');
+        console.error(err);
+      }
     }
   };
 
-  const handleDeleteTask = (taskId: string) => {
+  const handleDeleteTask = async (taskId: string) => {
     if (confirm('Are you sure you want to delete this task and all related expenses?')) {
-      deleteTask(taskId);
-      const updated = getAppData();
-      setData(updated);
+      try {
+        await deleteTask(taskId);
+        const updated = await getAppData();
+        setData(updated);
+      } catch (err) {
+        alert('Failed to delete task');
+        console.error(err);
+      }
     }
   };
 
-  const handleRefreshData = () => {
-    const updated = getAppData();
-    setData(updated);
+  const handleRefreshData = async () => {
+    try {
+      const updated = await getAppData();
+      setData(updated);
+    } catch (err) {
+      alert('Failed to refresh data');
+      console.error(err);
+    }
   };
 
   const handleAddExpenseSuccess = () => {
@@ -87,13 +126,13 @@ export default function Dashboard() {
     const input = document.createElement('input');
     input.type = 'file';
     input.accept = 'application/json';
-    input.onchange = (e: any) => {
+    input.onchange = async (e: any) => {
       const file = e.target.files[0];
       const reader = new FileReader();
-      reader.onload = (event: any) => {
+      reader.onload = async (event: any) => {
         try {
           const imported = JSON.parse(event.target.result);
-          saveAppData(imported);
+          await saveAppData(imported);
           setData(imported);
           alert('Data imported successfully!');
         } catch (error) {
