@@ -7,7 +7,8 @@ import { SpendingAreaChart } from '@/components/SpendingAreaChart';
 import { TasksExpenseTable } from '@/components/TasksExpenseTable';
 import { AddExpenseModal } from '@/components/AddExpenseModal';
 import { AddTaskModal } from '@/components/AddTaskModal';
-import { AppData } from '@/types';
+import { ProjectSettingsModal } from '@/components/ProjectSettingsModal';
+import { AppData, Task } from '@/types';
 import { getAppData, saveAppData, deleteExpense, deleteTask, updateProject } from '@/lib/storage';
 import { getQuickStats } from '@/lib/utils';
 
@@ -17,6 +18,8 @@ export default function Dashboard() {
   const [error, setError] = useState<string | null>(null);
   const [showAddExpense, setShowAddExpense] = useState(false);
   const [showAddTask, setShowAddTask] = useState(false);
+  const [showProjectSettings, setShowProjectSettings] = useState(false);
+  const [editingCategory, setEditingCategory] = useState<Task | null>(null);
 
   const loadData = async () => {
     try {
@@ -36,14 +39,6 @@ export default function Dashboard() {
     setData(updated);
   };
 
-  const handleStartDateChange = async (newDate: string) => {
-    if (!data) return;
-    await updateProject({ startDate: newDate });
-    setData((prev) =>
-      prev ? { ...prev, project: { ...prev.project, startDate: newDate } } : prev
-    );
-  };
-
   const handleDeleteExpense = async (id: string) => {
     if (!confirm('Delete this expense?')) return;
     await deleteExpense(id);
@@ -51,9 +46,14 @@ export default function Dashboard() {
   };
 
   const handleDeleteTask = async (id: string) => {
-    if (!confirm('Delete this task and all its expenses?')) return;
+    if (!confirm('Delete this category and all its expenses?')) return;
     await deleteTask(id);
     handleRefresh();
+  };
+
+  const handleEditCategory = (category: Task) => {
+    setEditingCategory(category);
+    setShowAddTask(true);
   };
 
   const handleExport = () => {
@@ -65,28 +65,6 @@ export default function Dashboard() {
     a.download = `inchara-renovation-${new Date().toISOString().split('T')[0]}.json`;
     a.click();
     URL.revokeObjectURL(url);
-  };
-
-  const handleImport = () => {
-    const input = document.createElement('input');
-    input.type = 'file';
-    input.accept = 'application/json';
-    input.onchange = async (e: any) => {
-      const file = e.target.files?.[0];
-      if (!file) return;
-      const reader = new FileReader();
-      reader.onload = async (ev: any) => {
-        try {
-          const imported = JSON.parse(ev.target.result);
-          await saveAppData(imported);
-          setData(imported);
-        } catch {
-          alert('Invalid file format');
-        }
-      };
-      reader.readAsText(file);
-    };
-    input.click();
   };
 
   if (loading) {
@@ -112,14 +90,12 @@ export default function Dashboard() {
     <div className="flex flex-col h-screen overflow-hidden bg-gray-50">
       <Navbar
         projectName={data.project.name}
-        projectStartDate={projectStartDate}
-        onStartDateChange={handleStartDateChange}
         onExport={handleExport}
-        onImport={handleImport}
         onAddExpense={() => setShowAddExpense(true)}
+        onSettings={() => setShowProjectSettings(true)}
       />
 
-      <main className="flex-1 overflow-y-auto p-6 space-y-5">
+      <main className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-5">
         <KPISection stats={stats} />
         <SpendingAreaChart
           expenses={data.expenses}
@@ -133,6 +109,7 @@ export default function Dashboard() {
           onAddTask={() => setShowAddTask(true)}
           onAddExpense={() => setShowAddExpense(true)}
           onRefresh={handleRefresh}
+          onEditTask={handleEditCategory}
         />
       </main>
 
@@ -145,8 +122,18 @@ export default function Dashboard() {
       />
       <AddTaskModal
         isOpen={showAddTask}
-        onClose={() => setShowAddTask(false)}
+        onClose={() => {
+          setShowAddTask(false);
+          setEditingCategory(null);
+        }}
         onSuccess={handleRefresh}
+        task={editingCategory || undefined}
+      />
+      <ProjectSettingsModal
+        isOpen={showProjectSettings}
+        onClose={() => setShowProjectSettings(false)}
+        onSuccess={handleRefresh}
+        project={data.project}
       />
     </div>
   );

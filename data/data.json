@@ -1,21 +1,141 @@
 {
   "project": {
     "name": "Inchara Renovation",
-    "startDate": "2024-01-15",
-    "endDate": "2025-01-15",
-    "totalBudget": 1000000,
-    "location": "Your Address"
+    "startDate": "2026-06-06",
+    "endDate": "2026-07-10",
+    "totalBudget": 500000,
+    "location": "Kumara Park,  Hubli"
   },
   "tasks": [
     {
-      "id": "task_1781199839308",
-      "name": "Floor and wall tile replacement",
-      "description": "removing of old tiles and installing new tiles",
-      "budgetedAmount": 40000,
-      "createdDate": "2026-06-11T17:43:59.308Z",
+      "id": "task_1781201012898",
+      "name": "Tile Procurement",
+      "description": "",
+      "budgetedAmount": 0,
+      "createdDate": "2026-06-11T18:03:32.898Z",
+      "status": "active",
+      "priority": "medium",
+      "color": "#10B981"
+    },
+    {
+      "id": "task_1781201025798",
+      "name": "Tile Replacement",
+      "description": "",
+      "budgetedAmount": 0,
+      "createdDate": "2026-06-11T18:03:45.798Z",
+      "status": "active",
+      "priority": "medium",
+      "color": "#10B981"
+    },
+    {
+      "id": "task_1781201043181",
+      "name": "Civil Procurement",
+      "description": "",
+      "budgetedAmount": 0,
+      "createdDate": "2026-06-11T18:04:03.181Z",
+      "status": "active",
+      "priority": "medium",
+      "color": "#EF4444"
+    },
+    {
+      "id": "task_1781201060531",
+      "name": "Civil Labour ",
+      "description": "",
+      "budgetedAmount": 0,
+      "createdDate": "2026-06-11T18:04:20.531Z",
+      "status": "active",
+      "priority": "medium",
+      "color": "#EF4444"
+    },
+    {
+      "id": "task_1781201103957",
+      "name": "Plumbing Procurement",
+      "description": "",
+      "budgetedAmount": 0,
+      "createdDate": "2026-06-11T18:05:03.957Z",
       "status": "active",
       "priority": "medium",
       "color": "#3B82F6"
+    },
+    {
+      "id": "task_1781201110697",
+      "name": "Plumbing Labour",
+      "description": "",
+      "budgetedAmount": 0,
+      "createdDate": "2026-06-11T18:05:10.697Z",
+      "status": "active",
+      "priority": "medium",
+      "color": "#3B82F6"
+    },
+    {
+      "id": "task_1781201259908",
+      "name": "Electrical Procurement",
+      "description": "",
+      "budgetedAmount": 0,
+      "createdDate": "2026-06-11T18:07:39.908Z",
+      "status": "active",
+      "priority": "medium",
+      "color": "#F59E0B"
+    },
+    {
+      "id": "task_1781201270592",
+      "name": "Electrical Labour",
+      "description": "",
+      "budgetedAmount": 0,
+      "createdDate": "2026-06-11T18:07:50.592Z",
+      "status": "active",
+      "priority": "medium",
+      "color": "#F59E0B"
+    },
+    {
+      "id": "task_1781201315775",
+      "name": "Carpentry Procurement",
+      "description": "",
+      "budgetedAmount": 0,
+      "createdDate": "2026-06-11T18:08:35.775Z",
+      "status": "active",
+      "priority": "medium",
+      "color": "#EC4899"
+    },
+    {
+      "id": "task_1781201361225",
+      "name": "Carpentry Labour",
+      "description": "",
+      "budgetedAmount": 0,
+      "createdDate": "2026-06-11T18:09:21.225Z",
+      "status": "active",
+      "priority": "medium",
+      "color": "#EC4899"
+    },
+    {
+      "id": "task_1781201376125",
+      "name": "Transportation",
+      "description": "",
+      "budgetedAmount": 0,
+      "createdDate": "2026-06-11T18:09:36.125Z",
+      "status": "active",
+      "priority": "medium",
+      "color": "#6366F1"
+    },
+    {
+      "id": "task_1781201394858",
+      "name": "Scrap",
+      "description": "",
+      "budgetedAmount": 0,
+      "createdDate": "2026-06-11T18:09:54.858Z",
+      "status": "active",
+      "priority": "medium",
+      "color": "#8B5CF6"
+    },
+    {
+      "id": "task_1781201422192",
+      "name": "Tips",
+      "description": "",
+      "budgetedAmount": 0,
+      "createdDate": "2026-06-11T18:10:22.192Z",
+      "status": "active",
+      "priority": "medium",
+      "color": "#06B6D4"
     }
   ],
   "expenses": []

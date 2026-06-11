@@ -111,10 +111,14 @@ export function getSpendingByRange(
 
   while (cursor <= now) {
     const periodStart = new Date(cursor);
+    periodStart.setHours(0, 0, 0, 0);
+
     const periodEnd = new Date(cursor);
     if (useWeekly) {
       periodEnd.setDate(periodEnd.getDate() + 6);
     }
+    periodEnd.setHours(23, 59, 59, 999);
+
     if (periodEnd > now) periodEnd.setTime(now.getTime());
 
     const total = expenses
@@ -225,7 +229,7 @@ export function groupExpensesByDay(expenses: Expense[]): Record<string, Expense[
 }
 
 export function getQuickStats(data: AppData) {
-  const totalBudget = getTotalBudget(data.tasks);
+  const totalBudget = data.project.totalBudget;
   const totalSpent = getTotalSpent(data.expenses);
   const remaining = totalBudget - totalSpent;
   const spentPercentage = Math.round((totalSpent / totalBudget) * 100) || 0;

@@ -113,12 +113,12 @@ export function AddExpenseModal({
 
         {/* Form */}
         <form onSubmit={handleSubmit} className="px-5 py-4 space-y-4">
-          {/* Task */}
+          {/* Category */}
           <div>
-            <label className={labelClass}>Task</label>
+            <label className={labelClass}>Category</label>
             {tasks.length === 0 ? (
               <p className="text-xs text-orange-500 bg-orange-50 px-3 py-2 rounded-md border border-orange-100">
-                No tasks yet — create a task first
+                No categories yet — create a category first
               </p>
             ) : (
               <select

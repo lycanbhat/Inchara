@@ -22,12 +22,12 @@ export function KPISection({ stats }: { stats: Stats }) {
   const nearBudget = stats.spentPercentage >= 80 && !overBudget;
 
   return (
-    <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
       <KPICard
         title="Total Budget"
         value={formatCurrency(stats.totalBudget)}
         subtitle="Project budget"
-        description="Across all tasks"
+        description="Total project budget"
       />
       <KPICard
         title="Total Spent"
@@ -47,7 +47,7 @@ export function KPISection({ stats }: { stats: Stats }) {
         badge={overBudget ? 'Over budget' : undefined}
         badgePositive={false}
         subtitle={overBudget ? 'Budget exceeded' : 'Budget remaining'}
-        description={`${stats.activeTasks} active task${stats.activeTasks !== 1 ? 's' : ''}`}
+        description={`${stats.activeTasks} active category${stats.activeTasks !== 1 ? 'ies' : ''}`}
       />
       <KPICard
         title="This Month"

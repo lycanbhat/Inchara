@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
 import { Task } from '@/types';
 import { addTask, updateTask } from '@/lib/storage';
@@ -21,6 +21,16 @@ const COLORS = [
   '#10B981',
   '#EF4444',
   '#6366F1',
+  '#F43F5E',
+  '#D946EF',
+  '#A855F7',
+  '#0EA5E9',
+  '#14B8A6',
+  '#22C55E',
+  '#84CC16',
+  '#EAB308',
+  '#F97316',
+  '#475569',
 ];
 
 const inputClass =
@@ -32,18 +42,27 @@ export function AddTaskModal({ isOpen, onClose, onSuccess, task }: AddTaskModalP
   const [formData, setFormData] = useState({
     name: task?.name || '',
     description: task?.description || '',
-    budgetedAmount: task?.budgetedAmount ?? '',
     priority: task?.priority || 'medium',
     color: task?.color || COLORS[0],
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
+  useEffect(() => {
+    if (isOpen) {
+      setFormData({
+        name: task?.name || '',
+        description: task?.description || '',
+        priority: task?.priority || 'medium',
+        color: task?.color || COLORS[0],
+      });
+      setErrors({});
+    }
+  }, [task, isOpen]);
+
   const validate = () => {
     const e: Record<string, string> = {};
     if (!formData.name.trim()) e.name = 'Required';
-    if (!formData.budgetedAmount || Number(formData.budgetedAmount) <= 0)
-      e.budgetedAmount = 'Enter a valid amount';
     setErrors(e);
     return Object.keys(e).length === 0;
   };
@@ -57,7 +76,7 @@ export function AddTaskModal({ isOpen, onClose, onSuccess, task }: AddTaskModalP
         await updateTask(task.id, {
           name: formData.name,
           description: formData.description,
-          budgetedAmount: Number(formData.budgetedAmount),
+          budgetedAmount: 0,
           priority: formData.priority as any,
           color: formData.color,
         });
@@ -66,7 +85,7 @@ export function AddTaskModal({ isOpen, onClose, onSuccess, task }: AddTaskModalP
           id: `task_${Date.now()}`,
           name: formData.name,
           description: formData.description,
-          budgetedAmount: Number(formData.budgetedAmount),
+          budgetedAmount: 0,
           createdDate: new Date().toISOString(),
           status: 'active',
           priority: formData.priority as any,
@@ -76,7 +95,7 @@ export function AddTaskModal({ isOpen, onClose, onSuccess, task }: AddTaskModalP
       onSuccess();
       onClose();
     } catch {
-      alert('Failed to save task');
+      alert('Failed to save category');
     } finally {
       setIsSubmitting(false);
     }
@@ -98,10 +117,10 @@ export function AddTaskModal({ isOpen, onClose, onSuccess, task }: AddTaskModalP
         <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
           <div>
             <h2 className="text-sm font-semibold text-gray-900">
-              {task ? 'Edit Task' : 'Add Task'}
+              {task ? 'Edit Category' : 'Add Category'}
             </h2>
             <p className="text-xs text-gray-400 mt-0.5">
-              {task ? 'Update the task details' : 'Create a new construction task'}
+              {task ? 'Update the category details' : 'Create a new construction category'}
             </p>
           </div>
           <button
@@ -116,7 +135,7 @@ export function AddTaskModal({ isOpen, onClose, onSuccess, task }: AddTaskModalP
         <form onSubmit={handleSubmit} className="px-5 py-4 space-y-4">
           {/* Name */}
           <div>
-            <label className={labelClass}>Task Name</label>
+            <label className={labelClass}>Category Name</label>
             <input
               type="text"
               value={formData.name}
@@ -140,34 +159,18 @@ export function AddTaskModal({ isOpen, onClose, onSuccess, task }: AddTaskModalP
             />
           </div>
 
-          {/* Budget + Priority row */}
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className={labelClass}>Budget (₹)</label>
-              <input
-                type="number"
-                value={formData.budgetedAmount}
-                onChange={(e) => setFormData({ ...formData, budgetedAmount: e.target.value })}
-                className={inputClass}
-                placeholder="0"
-                min="0"
-              />
-              {errors.budgetedAmount && (
-                <p className="text-xs text-red-500 mt-1">{errors.budgetedAmount}</p>
-              )}
-            </div>
-            <div>
-              <label className={labelClass}>Priority</label>
-              <select
-                value={formData.priority}
-                onChange={(e) => setFormData({ ...formData, priority: e.target.value as any })}
-                className={inputClass}
-              >
-                <option value="low">Low</option>
-                <option value="medium">Medium</option>
-                <option value="high">High</option>
-              </select>
-            </div>
+          {/* Priority */}
+          <div>
+            <label className={labelClass}>Priority</label>
+            <select
+              value={formData.priority}
+              onChange={(e) => setFormData({ ...formData, priority: e.target.value as any })}
+              className={inputClass}
+            >
+              <option value="low">Low</option>
+              <option value="medium">Medium</option>
+              <option value="high">High</option>
+            </select>
           </div>
 
           {/* Color */}
@@ -209,7 +212,7 @@ export function AddTaskModal({ isOpen, onClose, onSuccess, task }: AddTaskModalP
               disabled={isSubmitting}
               className="flex-1 text-sm px-4 py-2 rounded-md bg-gray-900 text-white hover:bg-gray-800 transition-colors disabled:opacity-50"
             >
-              {isSubmitting ? 'Saving…' : task ? 'Update Task' : 'Add Task'}
+              {isSubmitting ? 'Saving…' : task ? 'Update Category' : 'Add Category'}
             </button>
           </div>
         </form>

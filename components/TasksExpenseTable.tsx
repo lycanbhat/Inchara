@@ -4,7 +4,6 @@ import { useState } from 'react';
 import { Task, Expense } from '@/types';
 import { formatCurrency, getTaskSpent, formatDate, getTimeAgo } from '@/lib/utils';
 import { MoreHorizontal, Plus, Trash2, GripVertical, Edit2 } from 'lucide-react';
-import { updateTask } from '@/lib/storage';
 
 interface Props {
   tasks: Task[];
@@ -14,14 +13,12 @@ interface Props {
   onAddTask: () => void;
   onAddExpense: () => void;
   onRefresh: () => void;
+  onEditTask?: (task: Task) => void;
 }
 
-const TABS = ['Tasks', 'Expenses'] as const;
+const TABS = ['Categories', 'Expenses'] as const;
 
-function TaskStatusBadge({ task, expenses }: { task: Task; expenses: Expense[] }) {
-  const spent = getTaskSpent(task.id, expenses);
-  const pct = task.budgetedAmount > 0 ? (spent / task.budgetedAmount) * 100 : 0;
-
+function TaskStatusBadge({ task }: { task: Task }) {
   if (task.status === 'completed') {
     return (
       <span className="inline-flex items-center gap-1.5 text-xs text-green-700">
@@ -30,19 +27,11 @@ function TaskStatusBadge({ task, expenses }: { task: Task; expenses: Expense[] }
       </span>
     );
   }
-  if (pct > 100) {
-    return (
-      <span className="inline-flex items-center gap-1.5 text-xs text-red-600">
-        <span className="w-1.5 h-1.5 rounded-full bg-red-500 flex-shrink-0" />
-        Over Budget
-      </span>
-    );
-  }
-  if (pct >= 80) {
+  if (task.status === 'paused') {
     return (
       <span className="inline-flex items-center gap-1.5 text-xs text-orange-600">
         <span className="w-1.5 h-1.5 rounded-full border border-orange-400 flex-shrink-0" />
-        Near Limit
+        Paused
       </span>
     );
   }
@@ -75,7 +64,7 @@ function PaymentBadge({ method }: { method: Expense['paymentMethod'] }) {
   );
 }
 
-function RowMenu({ onDelete }: { onDelete: () => void }) {
+function RowMenu({ onEdit, onDelete }: { onEdit?: () => void; onDelete: () => void }) {
   const [open, setOpen] = useState(false);
   return (
     <div className="relative">
@@ -89,9 +78,18 @@ function RowMenu({ onDelete }: { onDelete: () => void }) {
         <>
           <div className="fixed inset-0 z-10" onClick={() => setOpen(false)} />
           <div className="absolute right-0 top-7 z-20 bg-white border border-gray-200 rounded-lg shadow-md py-1 w-36">
+            {onEdit && (
+              <button
+                onClick={() => { onEdit(); setOpen(false); }}
+                className="w-full flex items-center gap-2 px-3 py-1.5 text-xs text-gray-700 hover:bg-gray-50 transition-colors"
+              >
+                <Edit2 className="w-3.5 h-3.5" />
+                Edit
+              </button>
+            )}
             <button
               onClick={() => { onDelete(); setOpen(false); }}
-              className="w-full flex items-center gap-2 px-3 py-1.5 text-xs text-red-600 hover:bg-red-50 transition-colors"
+              className="w-full flex items-center gap-2 px-3 py-1.5 text-xs text-red-600 hover:bg-red-50 transition-colors border-t border-gray-50"
             >
               <Trash2 className="w-3.5 h-3.5" />
               Delete
@@ -107,21 +105,22 @@ function TasksTable({
   tasks,
   expenses,
   onDeleteTask,
+  onEditTask,
 }: {
   tasks: Task[];
   expenses: Expense[];
   onDeleteTask: (id: string) => void;
+  onEditTask?: (task: Task) => void;
 }) {
   if (tasks.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-16 text-center">
-        <p className="text-sm font-medium text-gray-900 mb-1">No tasks yet</p>
-        <p className="text-xs text-gray-400">Create your first task to get started</p>
+        <p className="text-sm font-medium text-gray-900 mb-1">No categories yet</p>
+        <p className="text-xs text-gray-400">Create your first category to get started</p>
       </div>
     );
   }
 
-  const totalBudget = tasks.reduce((s, t) => s + t.budgetedAmount, 0);
   const totalSpent = tasks.reduce((s, t) => s + getTaskSpent(t.id, expenses), 0);
 
   return (
@@ -131,12 +130,11 @@ function TasksTable({
           <tr className="border-b border-gray-100">
             <th className="w-8 px-4 py-3" />
             <th className="text-left px-4 py-3 text-xs font-medium text-gray-400 whitespace-nowrap">
-              Task Name
+              Category Name
             </th>
             <th className="text-left px-4 py-3 text-xs font-medium text-gray-400">Status</th>
-            <th className="text-right px-4 py-3 text-xs font-medium text-gray-400">Budget</th>
             <th className="text-right px-4 py-3 text-xs font-medium text-gray-400">Spent</th>
-            <th className="text-left px-4 py-3 text-xs font-medium text-gray-400">Priority</th>
+            <th className="text-left px-4 py-3 text-xs font-medium text-gray-400 hidden sm:table-cell">Priority</th>
             <th className="w-10 px-4 py-3" />
           </tr>
         </thead>
@@ -150,7 +148,7 @@ function TasksTable({
                 </td>
                 <td className="px-4 py-3">
                   <div className="flex items-center gap-2.5">
-                    <span
+                     <span
                       className="w-2.5 h-2.5 rounded-sm flex-shrink-0"
                       style={{ backgroundColor: task.color }}
                     />
@@ -165,27 +163,19 @@ function TasksTable({
                   </div>
                 </td>
                 <td className="px-4 py-3">
-                  <TaskStatusBadge task={task} expenses={expenses} />
+                  <TaskStatusBadge task={task} />
                 </td>
                 <td className="px-4 py-3 text-right text-sm text-gray-700">
-                  {formatCurrency(task.budgetedAmount)}
+                  {formatCurrency(spent)}
                 </td>
-                <td className="px-4 py-3 text-right text-sm">
-                  <span
-                    className={
-                      spent > task.budgetedAmount
-                        ? 'text-red-600 font-medium'
-                        : 'text-gray-700'
-                    }
-                  >
-                    {formatCurrency(spent)}
-                  </span>
-                </td>
-                <td className="px-4 py-3">
+                <td className="px-4 py-3 hidden sm:table-cell">
                   <PriorityBadge priority={task.priority} />
                 </td>
                 <td className="px-4 py-3">
-                  <RowMenu onDelete={() => onDeleteTask(task.id)} />
+                  <RowMenu
+                    onEdit={onEditTask ? () => onEditTask(task) : undefined}
+                    onDelete={() => onDeleteTask(task.id)}
+                  />
                 </td>
               </tr>
             );
@@ -194,15 +184,13 @@ function TasksTable({
         <tfoot>
           <tr className="border-t border-gray-100 bg-gray-50/50">
             <td colSpan={3} className="px-4 py-3 text-xs text-gray-400">
-              {tasks.length} task{tasks.length !== 1 ? 's' : ''}
-            </td>
-            <td className="px-4 py-3 text-right text-xs font-semibold text-gray-700">
-              {formatCurrency(totalBudget)}
+              {tasks.length} categor{tasks.length !== 1 ? 'ies' : 'y'}
             </td>
             <td className="px-4 py-3 text-right text-xs font-semibold text-gray-700">
               {formatCurrency(totalSpent)}
             </td>
-            <td colSpan={2} />
+            <td className="px-4 py-3 hidden sm:table-cell" />
+            <td />
           </tr>
         </tfoot>
       </table>
@@ -242,9 +230,9 @@ function ExpensesTable({
           <tr className="border-b border-gray-100">
             <th className="w-8 px-4 py-3" />
             <th className="text-left px-4 py-3 text-xs font-medium text-gray-400">Description</th>
-            <th className="text-left px-4 py-3 text-xs font-medium text-gray-400">Task</th>
-            <th className="text-left px-4 py-3 text-xs font-medium text-gray-400">Payment</th>
-            <th className="text-left px-4 py-3 text-xs font-medium text-gray-400">Date</th>
+            <th className="text-left px-4 py-3 text-xs font-medium text-gray-400">Category</th>
+            <th className="text-left px-4 py-3 text-xs font-medium text-gray-400 hidden sm:table-cell">Payment</th>
+            <th className="text-left px-4 py-3 text-xs font-medium text-gray-400 hidden sm:table-cell">Date</th>
             <th className="text-right px-4 py-3 text-xs font-medium text-gray-400">Amount</th>
             <th className="w-10 px-4 py-3" />
           </tr>
@@ -274,10 +262,10 @@ function ExpensesTable({
                     <span className="text-xs text-gray-400">Unknown</span>
                   )}
                 </td>
-                <td className="px-4 py-3">
+                <td className="px-4 py-3 hidden sm:table-cell">
                   <PaymentBadge method={expense.paymentMethod} />
                 </td>
-                <td className="px-4 py-3 text-sm text-gray-500 whitespace-nowrap">
+                <td className="px-4 py-3 text-sm text-gray-500 whitespace-nowrap hidden sm:table-cell">
                   {formatDate(expense.date)}
                 </td>
                 <td className="px-4 py-3 text-right text-sm font-semibold text-gray-900 whitespace-nowrap">
@@ -292,9 +280,11 @@ function ExpensesTable({
         </tbody>
         <tfoot>
           <tr className="border-t border-gray-100 bg-gray-50/50">
-            <td colSpan={5} className="px-4 py-3 text-xs text-gray-400">
+            <td colSpan={3} className="px-4 py-3 text-xs text-gray-400">
               {expenses.length} expense{expenses.length !== 1 ? 's' : ''}
             </td>
+            <td className="px-4 py-3 hidden sm:table-cell" />
+            <td className="px-4 py-3 hidden sm:table-cell" />
             <td className="px-4 py-3 text-right text-xs font-semibold text-gray-700">
               {formatCurrency(total)}
             </td>
@@ -313,6 +303,7 @@ export function TasksExpenseTable({
   onDeleteExpense,
   onAddTask,
   onAddExpense,
+  onEditTask,
 }: Props) {
   const [activeTab, setActiveTab] = useState<0 | 1>(0);
 
@@ -349,12 +340,12 @@ export function TasksExpenseTable({
           className="flex items-center gap-1.5 text-xs bg-gray-900 text-white px-3 py-1.5 rounded-md hover:bg-gray-800 transition-colors my-3"
         >
           <Plus className="w-3 h-3" />
-          {activeTab === 0 ? 'Add Task' : 'Add Expense'}
+          {activeTab === 0 ? 'Add Category' : 'Add Expense'}
         </button>
       </div>
 
       {activeTab === 0 ? (
-        <TasksTable tasks={tasks} expenses={expenses} onDeleteTask={onDeleteTask} />
+        <TasksTable tasks={tasks} expenses={expenses} onDeleteTask={onDeleteTask} onEditTask={onEditTask} />
       ) : (
         <ExpensesTable expenses={expenses} tasks={tasks} onDeleteExpense={onDeleteExpense} />
       )}
