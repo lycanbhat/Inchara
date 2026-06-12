@@ -15,7 +15,7 @@ export function Navbar({
   onSettings,
 }: NavbarProps) {
   const [timeString, setTimeString] = useState<string>('');
-  const [shortTimeString, setShortTimeString] = useState<string>('');
+  const [dateString, setDateString] = useState<string>('');
 
   useEffect(() => {
     const updateClock = () => {
@@ -41,18 +41,7 @@ export function Navbar({
       const dayPeriod = fullParts.find(p => p.type === 'dayPeriod')?.value?.toUpperCase() || '';
       
       setTimeString(`${day}-${month}-${year} ${hour}:${minute}:${second} ${dayPeriod}`);
-
-      const shortFormatter = new Intl.DateTimeFormat('en-IN', {
-        timeZone: 'Asia/Kolkata',
-        hour: '2-digit',
-        minute: '2-digit',
-        hour12: true
-      });
-      const shortParts = shortFormatter.formatToParts(now);
-      const sHour = shortParts.find(p => p.type === 'hour')?.value || '';
-      const sMinute = shortParts.find(p => p.type === 'minute')?.value || '';
-      const sDayPeriod = shortParts.find(p => p.type === 'dayPeriod')?.value?.toUpperCase() || '';
-      setShortTimeString(`${sHour}:${sMinute} ${sDayPeriod}`);
+      setDateString(`${day}-${month}-${year}`);
     };
 
     updateClock();
@@ -76,7 +65,7 @@ export function Navbar({
       <div className="flex items-center gap-1.5 sm:gap-2">
         {timeString && (
           <div className="text-[11px] sm:text-xs text-gray-500 font-mono bg-gray-50 border border-gray-200 rounded-md px-2 py-1.5 sm:px-3 sm:py-1.5 select-none transition-all duration-200">
-            <span className="sm:hidden">{shortTimeString}</span>
+            <span className="sm:hidden">{dateString}</span>
             <span className="hidden sm:inline">{timeString}</span>
           </div>
         )}
