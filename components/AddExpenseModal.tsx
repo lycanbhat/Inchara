@@ -19,6 +19,15 @@ const inputClass =
 
 const labelClass = 'block text-xs font-medium text-gray-500 mb-1.5';
 
+const getTodayISTString = () => {
+  return new Intl.DateTimeFormat('fr-CA', {
+    timeZone: 'Asia/Kolkata',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).format(new Date());
+};
+
 export function AddExpenseModal({
   isOpen,
   onClose,
@@ -32,8 +41,7 @@ export function AddExpenseModal({
     amount: expense?.amount ?? '',
     paymentMethod: expense?.paymentMethod || 'cash',
     description: expense?.description || '',
-    date: expense?.date?.split('T')[0] || new Date().toISOString().split('T')[0],
-    time: expense?.date?.split('T')[1]?.substring(0, 5) || '12:00',
+    date: expense?.date?.split('T')[0] || getTodayISTString(),
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -45,8 +53,7 @@ export function AddExpenseModal({
         amount: expense?.amount ?? '',
         paymentMethod: expense?.paymentMethod || 'cash',
         description: expense?.description || '',
-        date: expense?.date?.split('T')[0] || new Date().toISOString().split('T')[0],
-        time: expense?.date?.split('T')[1]?.substring(0, 5) || '12:00',
+        date: expense?.date?.split('T')[0] || getTodayISTString(),
       });
       setErrors({});
     }
@@ -66,7 +73,7 @@ export function AddExpenseModal({
     if (!validate()) return;
     setIsSubmitting(true);
     try {
-      const dateTime = `${formData.date}T${formData.time}:00`;
+      const dateTime = `${formData.date}T12:00:00+05:30`;
       if (expense) {
         await updateExpense(expense.id, {
           taskId: formData.taskId,
@@ -194,28 +201,17 @@ export function AddExpenseModal({
             </div>
           </div>
 
-          {/* Date + Time row */}
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className={labelClass}>Date</label>
-              <input
-                type="date"
-                value={formData.date}
-                onChange={(e) => setFormData({ ...formData, date: e.target.value })}
-                min={minDate}
-                max={new Date().toISOString().split('T')[0]}
-                className={inputClass}
-              />
-            </div>
-            <div>
-              <label className={labelClass}>Time</label>
-              <input
-                type="time"
-                value={formData.time}
-                onChange={(e) => setFormData({ ...formData, time: e.target.value })}
-                className={inputClass}
-              />
-            </div>
+          {/* Date row */}
+          <div>
+            <label className={labelClass}>Date</label>
+            <input
+              type="date"
+              value={formData.date}
+              onChange={(e) => setFormData({ ...formData, date: e.target.value })}
+              min={minDate}
+              max={getTodayISTString()}
+              className={inputClass}
+            />
           </div>
 
           {/* Actions */}

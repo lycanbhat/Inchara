@@ -19,14 +19,16 @@ export function formatDate(dateString: string): string {
   return new Date(dateString).toLocaleDateString('en-IN', {
     day: 'numeric',
     month: 'short',
-    year: 'numeric'
+    year: 'numeric',
+    timeZone: 'Asia/Kolkata'
   });
 }
 
 export function formatTime(dateString: string): string {
   return new Date(dateString).toLocaleTimeString('en-IN', {
     hour: '2-digit',
-    minute: '2-digit'
+    minute: '2-digit',
+    timeZone: 'Asia/Kolkata'
   });
 }
 
@@ -87,10 +89,15 @@ export function getExpensesByDate(expenses: Expense[]): Record<string, Expense[]
 
 export function getLastNDays(days: number): string[] {
   const result = [];
+  const formatter = new Intl.DateTimeFormat('fr-CA', {
+    timeZone: 'Asia/Kolkata',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit'
+  });
   for (let i = days - 1; i >= 0; i--) {
-    const date = new Date();
-    date.setDate(date.getDate() - i);
-    result.push(date.toISOString().split('T')[0]);
+    const date = new Date(Date.now() - i * 86400000);
+    result.push(formatter.format(date));
   }
   return result;
 }
@@ -99,11 +106,21 @@ export function getSpendingByRange(
   expenses: Expense[],
   startDate: string
 ): Array<{ date: string; amount: number }> {
-  const start = new Date(startDate + 'T00:00:00');
-  const now = new Date();
-  const dayDiff = Math.ceil((now.getTime() - start.getTime()) / 86400000);
+  const formatter = new Intl.DateTimeFormat('fr-CA', {
+    timeZone: 'Asia/Kolkata',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit'
+  });
+  
+  const startStr = startDate;
+  const nowStr = formatter.format(new Date());
+  
+  // Use UTC times to execute exact day difference calculation consistently
+  const start = new Date(startStr + 'T00:00:00Z');
+  const now = new Date(nowStr + 'T00:00:00Z');
 
-  // Aggregate by week when range exceeds 60 days to keep the chart readable
+  const dayDiff = Math.ceil((now.getTime() - start.getTime()) / 86400000);
   const useWeekly = dayDiff > 60;
 
   const result: Array<{ date: string; amount: number }> = [];
@@ -111,20 +128,19 @@ export function getSpendingByRange(
 
   while (cursor <= now) {
     const periodStart = new Date(cursor);
-    periodStart.setHours(0, 0, 0, 0);
-
     const periodEnd = new Date(cursor);
     if (useWeekly) {
       periodEnd.setDate(periodEnd.getDate() + 6);
     }
-    periodEnd.setHours(23, 59, 59, 999);
-
-    if (periodEnd > now) periodEnd.setTime(now.getTime());
+    
+    const periodStartStr = formatter.format(periodStart);
+    const periodEndStr = formatter.format(periodEnd);
+    const limitEndStr = nowStr;
 
     const total = expenses
       .filter(e => {
-        const d = new Date(e.date);
-        return d >= periodStart && d <= periodEnd;
+        const eDateStr = e.date.split('T')[0];
+        return eDateStr >= periodStartStr && eDateStr <= (periodEndStr > limitEndStr ? limitEndStr : periodEndStr);
       })
       .reduce((sum, e) => sum + e.amount, 0);
 
@@ -132,7 +148,7 @@ export function getSpendingByRange(
       date: periodStart.toLocaleDateString('en-IN', {
         day: 'numeric',
         month: 'short',
-        ...(useWeekly ? {} : {}),
+        timeZone: 'UTC'
       }),
       amount: total,
     });
@@ -199,13 +215,23 @@ export function getTaskDistribution(tasks: Task[], expenses: Expense[]): Array<{
 }
 
 export function getDayInfo(date: string): string {
-  const today = new Date().toISOString().split('T')[0];
-  const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0];
+  const formatter = new Intl.DateTimeFormat('fr-CA', {
+    timeZone: 'Asia/Kolkata',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit'
+  });
+  const today = formatter.format(new Date());
+  
+  const yesterdayDate = new Date(Date.now() - 86400000);
+  const yesterday = formatter.format(yesterdayDate);
 
-  if (date.split('T')[0] === today) return 'Today';
-  if (date.split('T')[0] === yesterday) return 'Yesterday';
+  const dateStr = date.split('T')[0];
 
-  const expenseDate = new Date(date);
+  if (dateStr === today) return 'Today';
+  if (dateStr === yesterday) return 'Yesterday';
+
+  const expenseDate = new Date(dateStr + 'T12:00:00+05:30');
   const now = new Date();
   const daysAgo = Math.floor((now.getTime() - expenseDate.getTime()) / 86400000);
 
@@ -234,20 +260,31 @@ export function getQuickStats(data: AppData) {
   const remaining = totalBudget - totalSpent;
   const spentPercentage = Math.round((totalSpent / totalBudget) * 100) || 0;
 
-  const today = new Date().toISOString().split('T')[0];
-  const thisWeekStart = new Date(Date.now() - 7 * 86400000).toISOString().split('T')[0];
-  const thisMonthStart = new Date(Date.now() - 30 * 86400000).toISOString().split('T')[0];
+  const todayDate = new Date();
+  const weekAgo = new Date(todayDate.getTime() - 7 * 86400000);
+  const monthAgo = new Date(todayDate.getTime() - 30 * 86400000);
+
+  const formatter = new Intl.DateTimeFormat('fr-CA', {
+    timeZone: 'Asia/Kolkata',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit'
+  });
+
+  const today = formatter.format(todayDate);
+  const thisWeekStart = formatter.format(weekAgo);
+  const thisMonthStart = formatter.format(monthAgo);
 
   const todaySpending = data.expenses
     .filter(e => e.date.split('T')[0] === today)
     .reduce((sum, e) => sum + e.amount, 0);
 
   const thisWeekSpending = data.expenses
-    .filter(e => e.date >= thisWeekStart)
+    .filter(e => e.date.split('T')[0] >= thisWeekStart)
     .reduce((sum, e) => sum + e.amount, 0);
 
   const thisMonthSpending = data.expenses
-    .filter(e => e.date >= thisMonthStart)
+    .filter(e => e.date.split('T')[0] >= thisMonthStart)
     .reduce((sum, e) => sum + e.amount, 0);
 
   const completedTasks = data.tasks.filter(t => t.status === 'completed').length;
