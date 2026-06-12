@@ -144,8 +144,12 @@ const INITIAL_DATA: AppData = {
 };
 
 async function queryUpstash<T>(command: any[]): Promise<T | null> {
-  const url = process.env.UPSTASH_REDIS_REST_URL;
-  const token = process.env.UPSTASH_REDIS_REST_TOKEN;
+  let url = process.env.UPSTASH_REDIS_REST_URL;
+  let token = process.env.UPSTASH_REDIS_REST_TOKEN;
+
+  // Trim surrounding quotes if present
+  if (url) url = url.replace(/^["']|["']$/g, '');
+  if (token) token = token.replace(/^["']|["']$/g, '');
 
   if (!url || !token) {
     throw new Error('Missing Upstash Redis environment variables. Please configure UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN.');
