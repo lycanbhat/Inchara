@@ -24,6 +24,31 @@ export function formatDate(dateString: string): string {
   });
 }
 
+export function formatToCustomDisplayDate(dateStr: string): string {
+  if (!dateStr) return '';
+  const cleanDateStr = dateStr.split('T')[0];
+  const parts = cleanDateStr.split('-');
+  if (parts.length !== 3) return dateStr;
+  const [year, month, day] = parts;
+  const date = new Date(Date.UTC(Number(year), Number(month) - 1, Number(day)));
+  
+  if (isNaN(date.getTime())) return dateStr;
+
+  const formatter = new Intl.DateTimeFormat('en-IN', {
+    day: '2-digit',
+    month: 'long',
+    year: 'numeric',
+    timeZone: 'UTC'
+  });
+  
+  const formattedParts = formatter.formatToParts(date);
+  const dayVal = formattedParts.find(p => p.type === 'day')?.value || day;
+  const monthVal = formattedParts.find(p => p.type === 'month')?.value || '';
+  const yearVal = formattedParts.find(p => p.type === 'year')?.value || year;
+  
+  return `${dayVal}-${monthVal}-${yearVal}`;
+}
+
 export function formatTime(dateString: string): string {
   return new Date(dateString).toLocaleTimeString('en-IN', {
     hour: '2-digit',

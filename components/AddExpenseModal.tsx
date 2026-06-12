@@ -1,9 +1,10 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { X } from 'lucide-react';
+import { X, Calendar } from 'lucide-react';
 import { Task, Expense } from '@/types';
 import { addExpense, updateExpense } from '@/lib/storage';
+import { formatToCustomDisplayDate } from '@/lib/utils';
 
 interface AddExpenseModalProps {
   isOpen: boolean;
@@ -204,14 +205,22 @@ export function AddExpenseModal({
           {/* Date row */}
           <div>
             <label className={labelClass}>Date</label>
-            <input
-              type="date"
-              value={formData.date}
-              onChange={(e) => setFormData({ ...formData, date: e.target.value })}
-              min={minDate}
-              max={getTodayISTString()}
-              className={inputClass}
-            />
+            <div className="relative rounded-md border border-gray-200 focus-within:border-gray-400 transition-colors">
+              <div className="w-full bg-white px-3 py-2 text-sm text-gray-900 flex justify-between items-center pointer-events-none min-h-[38px] rounded-md">
+                <span className={formData.date ? 'text-gray-900' : 'text-gray-400'}>
+                  {formData.date ? formatToCustomDisplayDate(formData.date) : 'Select date'}
+                </span>
+                <Calendar className="w-4 h-4 text-gray-400" />
+              </div>
+              <input
+                type="date"
+                value={formData.date}
+                onChange={(e) => setFormData({ ...formData, date: e.target.value })}
+                min={minDate}
+                max={getTodayISTString()}
+                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer outline-none"
+              />
+            </div>
           </div>
 
           {/* Actions */}

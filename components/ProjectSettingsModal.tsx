@@ -1,9 +1,10 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { X } from 'lucide-react';
+import { X, Calendar } from 'lucide-react';
 import { Project } from '@/types';
 import { updateProject } from '@/lib/storage';
+import { formatToCustomDisplayDate } from '@/lib/utils';
 
 interface ProjectSettingsModalProps {
   isOpen: boolean;
@@ -138,22 +139,38 @@ export function ProjectSettingsModal({
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className={labelClass}>Start Date</label>
-              <input
-                type="date"
-                value={formData.startDate}
-                onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
-                className={inputClass}
-              />
+              <div className="relative rounded-md border border-gray-200 focus-within:border-gray-400 transition-colors">
+                <div className="w-full bg-white px-3 py-2 text-sm text-gray-900 flex justify-between items-center pointer-events-none min-h-[38px] rounded-md">
+                  <span className={formData.startDate ? 'text-gray-900' : 'text-gray-400'}>
+                    {formData.startDate ? formatToCustomDisplayDate(formData.startDate) : 'Select date'}
+                  </span>
+                  <Calendar className="w-4 h-4 text-gray-400" />
+                </div>
+                <input
+                  type="date"
+                  value={formData.startDate}
+                  onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
+                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer outline-none"
+                />
+              </div>
               {errors.startDate && <p className="text-xs text-red-500 mt-1">{errors.startDate}</p>}
             </div>
             <div>
               <label className={labelClass}>End Date</label>
-              <input
-                type="date"
-                value={formData.endDate}
-                onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
-                className={inputClass}
-              />
+              <div className="relative rounded-md border border-gray-200 focus-within:border-gray-400 transition-colors">
+                <div className="w-full bg-white px-3 py-2 text-sm text-gray-900 flex justify-between items-center pointer-events-none min-h-[38px] rounded-md">
+                  <span className={formData.endDate ? 'text-gray-900' : 'text-gray-400'}>
+                    {formData.endDate ? formatToCustomDisplayDate(formData.endDate) : 'Select date'}
+                  </span>
+                  <Calendar className="w-4 h-4 text-gray-400" />
+                </div>
+                <input
+                  type="date"
+                  value={formData.endDate}
+                  onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
+                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer outline-none"
+                />
+              </div>
               {errors.endDate && <p className="text-xs text-red-500 mt-1">{errors.endDate}</p>}
             </div>
           </div>
