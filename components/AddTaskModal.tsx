@@ -112,9 +112,9 @@ export function AddTaskModal({ isOpen, onClose, onSuccess, task }: AddTaskModalP
       />
 
       {/* Panel */}
-      <div className="relative z-10 w-full max-w-sm mx-4 bg-white rounded-xl border border-gray-200 shadow-lg">
+      <div className="relative z-10 w-full h-full sm:h-auto sm:max-w-sm bg-white rounded-none sm:rounded-xl border-0 sm:border border-gray-200 shadow-none sm:shadow-lg flex flex-col overflow-hidden">
         {/* Header */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 flex-shrink-0">
           <div>
             <h2 className="text-sm font-semibold text-gray-900">
               {task ? 'Edit Category' : 'Add Category'}
@@ -132,7 +132,7 @@ export function AddTaskModal({ isOpen, onClose, onSuccess, task }: AddTaskModalP
         </div>
 
         {/* Form */}
-        <form onSubmit={handleSubmit} className="px-5 py-4 space-y-4">
+        <form onSubmit={handleSubmit} className="px-5 py-4 space-y-4 flex-1 overflow-y-auto">
           {/* Name */}
           <div>
             <label className={labelClass}>Category Name</label>
