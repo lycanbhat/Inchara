@@ -30,7 +30,7 @@ export function KPISection({ stats }: { stats: Stats }) {
   const cashPercentage = totalUpiCash > 0 ? 100 - upiPercentage : 0;
 
   return (
-    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+    <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-3 xl:grid-cols-5">
       <KPICard
         title="Total Budget"
         value={formatCurrency(stats.totalBudget)}
@@ -59,7 +59,7 @@ export function KPISection({ stats }: { stats: Stats }) {
       />
       
       {/* UPI vs Cash Custom Card */}
-      <div className="bg-white border border-gray-200 rounded-lg p-5 flex flex-col justify-between">
+      <div className="bg-white border border-gray-200 rounded-lg p-4 sm:p-5 flex flex-col justify-between">
         <div>
           <div className="flex items-start justify-between mb-2">
             <span className="text-sm text-gray-500">UPI vs Cash</span>
@@ -100,6 +100,7 @@ export function KPISection({ stats }: { stats: Stats }) {
         value={stats.mostExpensiveCategory}
         subtitle="Highest spent category"
         description={`Spent: ${formatCurrency(stats.mostExpensiveCategorySpent)}`}
+        className="col-span-2 sm:col-span-1"
       />
     </div>
   );

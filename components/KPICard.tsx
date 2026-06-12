@@ -7,6 +7,7 @@ interface KPICardProps {
   badgePositive?: boolean;
   subtitle?: string;
   description?: string;
+  className?: string;
 }
 
 export function KPICard({
@@ -16,9 +17,10 @@ export function KPICard({
   badgePositive = true,
   subtitle,
   description,
+  className,
 }: KPICardProps) {
   return (
-    <div className="bg-white border border-gray-200 rounded-lg p-5">
+    <div className={`bg-white border border-gray-200 rounded-lg p-4 sm:p-5 ${className || ''}`}>
       <div className="flex items-start justify-between mb-2">
         <span className="text-sm text-gray-500">{title}</span>
         {badge && (
